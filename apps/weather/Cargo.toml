@@ -1,0 +1,17 @@
+[package]
+name = "weather"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasmos-sdk.workspace = true
+serde_json = "1"
+
+[package.metadata.wasmos]
+name = "Weather"
+description = "wasi:http で Open-Meteo から天気を取得"
+color = "#0ea5e9"

@@ -1,0 +1,121 @@
+/// m5-wasmos のアプリ API。
+///
+/// ファームウェアを焼き直さずに変えられないのはこのファイルだけ、という前提で、
+/// できるだけ小さく保つ。ウィジェットやジェスチャはゲスト側 SDK（crates/sdk）の仕事。
+///
+/// モデルはイベント駆動: ホストが `init` を一度呼び、以後は `on-event` を呼ぶ。
+/// アプリはコールバックの中でブロックしない（wasi:http も非ブロッキングに使う）。
+/// こうするとホスト（実機 / ブラウザシミュレータ）がループと中断を握れる。
+package wasmos:os@0.1.0;
+
+interface types {
+  /// 0xAARRGGBB
+  type color = u32;
+
+  record rect { x: s32, y: s32, w: s32, h: s32 }
+
+  enum touch-phase { down, move, up, cancel }
+
+  record touch {
+    /// 指の識別子（down から up まで同じ）
+    id: u8,
+    phase: touch-phase,
+    x: s32,
+    y: s32,
+  }
+
+  variant event {
+    /// このフレームで変化したタッチ点
+    touch(list<touch>),
+    /// `system.request-frame` への応答。値は monotonic ms
+    frame(u64),
+    /// `system.set-timer` が返した id
+    timer(u32),
+    /// 保留中の wasi:http の future / stream が進んだかもしれない
+    io,
+    /// `gfx.load-image` のデコードが終わった（失敗時も来る。`image-size` が none なら失敗）
+    image-ready(u32),
+  }
+}
+
+interface gfx {
+  use types.{color, rect};
+
+  enum text-align { left, center, right }
+
+  record fill-rect-cmd { rect: rect, color: color, radius: u16 }
+  record stroke-rect-cmd { rect: rect, color: color, radius: u16, width: u16 }
+  record line-cmd { x0: s32, y0: s32, x1: s32, y1: s32, color: color, width: u16 }
+  record circle-cmd { x: s32, y: s32, r: u16, color: color }
+  /// (x, y) は align に応じた基準点の左上/中央上/右上
+  record text-cmd { x: s32, y: s32, size: u16, color: color, align: text-align, text: string }
+  record image-cmd { id: u32, src: option<rect>, dst: rect, alpha: u8 }
+
+  variant cmd {
+    clear(color),
+    fill-rect(fill-rect-cmd),
+    stroke-rect(stroke-rect-cmd),
+    line(line-cmd),
+    fill-circle(circle-cmd),
+    text(text-cmd),
+    image(image-cmd),
+    push-clip(rect),
+    pop-clip,
+  }
+
+  /// 論理画面サイズ（Tab5 は 1280x720 横）
+  screen-size: func() -> tuple<u32, u32>;
+  /// テキストの描画幅（px）
+  measure-text: func(text: string, size: u16) -> u32;
+
+  /// PNG / JPEG。デコード完了で `event.image-ready(id)` が来る
+  load-image: func(data: list<u8>) -> u32;
+  /// RGBA8888 の生ピクセル（即時に使える）
+  image-from-rgba: func(width: u32, height: u32, pixels: list<u8>) -> u32;
+  image-size: func(id: u32) -> option<tuple<u32, u32>>;
+  drop-image: func(id: u32);
+
+  /// 1 フレーム分のコマンドを描画する。描画は前フレームの上に重なる（全消去は `clear`）。
+  submit: func(frame: list<cmd>);
+}
+
+interface system {
+  record app-info {
+    id: string,
+    name: string,
+    version: string,
+    description: string,
+    /// ランチャーのタイル色
+    color: u32,
+  }
+
+  log: func(message: string);
+  /// monotonic ms
+  now-ms: func() -> u64;
+  /// UNIX epoch ms（時刻未同期なら none）
+  wall-ms: func() -> option<u64>;
+
+  /// 次の vsync で `event.frame` を 1 回送る（アニメーションは毎フレーム呼ぶ）
+  request-frame: func();
+  /// ms 後に `event.timer(id)` を 1 回送る
+  set-timer: func(ms: u32) -> u32;
+  cancel-timer: func(id: u32);
+
+  /// インストール済みアプリ
+  installed: func() -> list<app-info>;
+  /// 現在のコールバックが返った後、今のアプリを終了して id を起動する
+  launch: func(id: string, args: string);
+  /// 終了してランチャーに戻る
+  exit: func();
+}
+
+world app {
+  import wasi:http/outgoing-handler@0.2.3;
+  import gfx;
+  import system;
+
+  use types.{event};
+
+  export init: func(args: string);
+  export on-event: func(event: event);
+}

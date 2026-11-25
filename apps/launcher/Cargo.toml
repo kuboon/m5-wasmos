@@ -1,0 +1,18 @@
+[package]
+name = "launcher"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasmos-sdk.workspace = true
+
+[package.metadata.wasmos]
+name = "Launcher"
+description = "アプリ一覧と起動"
+color = "#64748b"
+# ランチャー自身は一覧に出さない
+hidden = true

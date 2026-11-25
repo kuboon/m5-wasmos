@@ -1,0 +1,9 @@
+# GitHub Pages のデプロイ workflow（kuboon/workflows の github-page-with-preview）が
+# mise を入れて `mise run build` を走らせる。Rust はランナーの rustup を使い、
+# rust-toolchain.toml が wasm32-unknown-unknown を入れる。
+[tools]
+deno = "2"
+
+[tasks.build]
+description = "apps をビルドして静的サイトを web/dist へ"
+run = "deno task build"

@@ -1,0 +1,16 @@
+[package]
+name = "paint"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasmos-sdk.workspace = true
+
+[package.metadata.wasmos]
+name = "Paint"
+description = "指でお絵かき（マルチタッチ対応）"
+color = "#f97316"

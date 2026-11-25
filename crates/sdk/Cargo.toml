@@ -1,0 +1,9 @@
+[package]
+name = "wasmos-sdk"
+description = "m5-wasmos のアプリ用 SDK（WIT バインディング + 描画/HTTP/UI の小道具）"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+wit-bindgen.workspace = true
