@@ -66,6 +66,11 @@ jobs:
           ls -la build/*.bin dist/
           # ESP32-P4 v1.x（Tab5）向けになっていること
           grep -q "^CONFIG_ESP32P4_REV_MIN_FULL=1$" sdkconfig
+          # Tab5 の ESP32-C6 との SDIO 配線（M5Stack 公式デモと同じ）
+          for kv in CMD=13 CLK=12 D0=11 D1=10 D2=9 D3=8; do
+            grep -q "^CONFIG_ESP_HOSTED_SDIO_PIN_${kv}$" sdkconfig
+          done
+          grep -q "^CONFIG_ESP_HOSTED_SDIO_GPIO_RESET_SLAVE=15$" sdkconfig
           # bootloader(0x2000) + partition table + app が入っているはず。小さすぎたら失敗にする
           size=$(stat -c %s dist/m5-wasmos.bin)
           test "$size" -gt 1000000
