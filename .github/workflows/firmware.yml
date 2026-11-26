@@ -108,7 +108,10 @@ jobs:
           gh release view firmware-latest -R "$REPO" >/dev/null 2>&1 || \
             gh release create firmware-latest -R "$REPO" --prerelease --title "firmware (latest main)" \
               --notes "main の最新ファームウェア。サイトの /flash から書き込めます。"
-          gh release upload firmware-latest -R "$REPO" --clobber m5-wasmos.bin firmware.json
+          # artifact は共通の親（firmware/esp）からの相対で展開される
+          ls -R
+          test "$(stat -c %s dist/m5-wasmos.bin)" -gt 1000000
+          gh release upload firmware-latest -R "$REPO" --clobber dist/m5-wasmos.bin dist/firmware.json
       - name: Rebuild Pages
         env:
           GH_TOKEN: ${{ github.token }}
