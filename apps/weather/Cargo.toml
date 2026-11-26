@@ -13,5 +13,5 @@ serde_json = "1"
 
 [package.metadata.wasmos]
 name = "Weather"
-description = "wasi:http で Open-Meteo から天気を取得"
+description = "東京都北区の天気と過去 1 週間の気温（wasi:http + Open-Meteo）"
 color = "#0ea5e9"
