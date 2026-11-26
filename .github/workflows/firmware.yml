@@ -64,6 +64,8 @@ jobs:
           mkdir -p dist
           cp build/flash_image.bin dist/m5-wasmos.bin
           ls -la build/*.bin dist/
+          # ESP32-P4 v1.x（Tab5）向けになっていること
+          grep -q "^CONFIG_ESP32P4_REV_MIN_FULL=1$" sdkconfig
           # bootloader(0x2000) + partition table + app が入っているはず。小さすぎたら失敗にする
           size=$(stat -c %s dist/m5-wasmos.bin)
           test "$size" -gt 1000000
