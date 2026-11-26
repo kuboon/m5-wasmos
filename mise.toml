@@ -6,4 +6,7 @@ deno = "2"
 
 [tasks.build]
 description = "apps をビルドして静的サイトを web/dist へ"
+# PR のときは main と PR の 2 回ビルドされるので、target を共有して 2 回目を速くする
+# （tools/precompile は cranelift を含みビルドに数分かかる）
+env = { CARGO_TARGET_DIR = "{{env.HOME}}/.cache/m5-wasmos-target" }
 run = "deno task build"

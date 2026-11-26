@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  # firmware.yml が新しいファームをリリースしたあとに呼ぶ
+  workflow_dispatch:
 
 # A reusable workflow runs with the CALLER's token permissions, so these must be
 # granted here — the callee cannot add them.

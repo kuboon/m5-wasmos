@@ -1,0 +1,13 @@
+[package]
+name = "wasmos-sim"
+description = "firmware/host を Linux で動かすテスト用ランナー（画面を PNG に書き出す）"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+wasmos-host = { path = "../host" }
+wasmtime = { workspace = true, features = ["std", "cranelift"] }
+png = "0.17"
+serde_json = "1"

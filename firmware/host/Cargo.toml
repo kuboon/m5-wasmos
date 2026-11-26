@@ -1,0 +1,16 @@
+[package]
+name = "wasmos-host"
+description = "m5-wasmos のホスト: wasmtime で wasm アプリを動かし、WIT を実装する（no_std + alloc）"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[features]
+# x86 等で .cwasm を作る（tools/precompile 用）。実機では使わない
+precompile = ["wasmtime/cranelift"]
+
+[dependencies]
+wasmtime.workspace = true
+tiny-skia = { version = "0.11", default-features = false, features = ["no-std-float"] }
+ab_glyph = { version = "0.2", default-features = false, features = ["libm"] }
+libm = "0.2"

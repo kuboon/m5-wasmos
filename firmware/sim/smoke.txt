@@ -1,0 +1,12 @@
+# CI 用: ランチャー → Paint → ホーム → Weather（HTTP はモック）が trap せずに動くこと
+shot /tmp/wasmos-1-launcher.png
+tap 250 270
+wait 50
+drag 200 300 900 500
+shot /tmp/wasmos-2-paint.png
+home
+wait 50
+mock https://api.open-meteo.com firmware/sim/weather.json
+tap 510 270
+wait 100
+shot /tmp/wasmos-3-weather.png

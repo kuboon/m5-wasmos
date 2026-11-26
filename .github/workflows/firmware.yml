@@ -1,0 +1,109 @@
+name: firmware
+
+# 実機用ファームを ESP-IDF でビルドする。main では GitHub Release「firmware-latest」に置き、
+# Pages を作り直す（サイトの /flash がそれを同じオリジンから配る）。
+on:
+  push:
+    branches: [main]
+    paths:
+      - firmware/**
+      - wit/**
+      - apps/**
+      - crates/**
+      - tools/**
+      - rust-toolchain.toml
+      - .github/workflows/firmware.yml
+  pull_request:
+    paths:
+      - firmware/**
+      - wit/**
+      - tools/**
+      - .github/workflows/firmware.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    container: espressif/idf:v5.5.6
+    steps:
+      - uses: actions/checkout@v7
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+      # ランチャーの .cwasm をファームに埋め込む（保存領域が空のとき用）
+      - run: deno task build:apps
+      - name: ESP-IDF build
+        shell: bash
+        working-directory: firmware/esp
+        run: |
+          . "$IDF_PATH/export.sh"
+          # Rust の静的ライブラリ（ESP-IDF の binutils で soft-float の部品を取り除くのでここで）
+          ./build_rust.sh
+          # 依存解決の途中で候補（esp_hosted 3.x など）の Kconfig 条件が見つからず configure が
+          # 止まることがある。1 回目で dependencies.lock が書かれるので、2 回目はそれを使う
+          if [ ! -f dependencies.lock ]; then
+            idf.py reconfigure || true
+            echo "---- dependencies.lock ----"; cat dependencies.lock || true
+            echo "---- who mentions ESP_HOSTED_HOST_USB_* ----"
+            grep -rl "ESP_HOSTED_HOST_USB" managed_components components 2>/dev/null || true
+            # 1 回目の解決で見た候補の Kconfig 条件が build/ に残るので消す（lock と managed_components は残す）
+            rm -rf build
+          fi
+          idf.py build
+          idf.py merge-bin -o m5-wasmos.bin
+          ls -la build/*.bin
+      - name: firmware.json
+        shell: bash
+        run: |
+          engine=$(tools/precompile/target/release/precompile --engine-id)
+          printf '{"commit":"%s","engine":"%s","builtAt":"%s"}\n' \
+            "$GITHUB_SHA" "$engine" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > firmware/esp/build/firmware.json
+          cat firmware/esp/build/firmware.json
+      # 依存の版を固定したくなったときのために、解決結果を残す
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: dependencies-lock
+          path: firmware/esp/dependencies.lock
+      - uses: actions/upload-artifact@v7
+        with:
+          name: firmware
+          path: |
+            firmware/esp/build/m5-wasmos.bin
+            firmware/esp/build/m5-wasmos.elf
+            firmware/esp/build/firmware.json
+
+  publish:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: firmware
+      - name: Release firmware-latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh release view firmware-latest -R "$REPO" >/dev/null 2>&1 || \
+            gh release create firmware-latest -R "$REPO" --prerelease --title "firmware (latest main)" \
+              --notes "main の最新ファームウェア。サイトの /flash から書き込めます。"
+          gh release upload firmware-latest -R "$REPO" --clobber m5-wasmos.bin firmware.json
+      - name: Rebuild Pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: gh workflow run pages.yml -R "$REPO" --ref main

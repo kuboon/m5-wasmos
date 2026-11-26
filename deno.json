@@ -1,5 +1,8 @@
 {
-  "workspace": ["./web/client", "./web/server"],
+  "workspace": [
+    "./web/client",
+    "./web/server"
+  ],
   "tasks": {
     "build:apps": {
       "description": "apps/* を wasm コンポーネントにし、シミュレータ用 JS と manifest を web/build/apps へ",
@@ -7,31 +10,63 @@
     },
     "build": {
       "description": "GitHub Pages 用の静的サイトを web/dist へ",
-      "dependencies": ["build:apps"],
+      "dependencies": [
+        "build:apps",
+        "fetch:firmware"
+      ],
       "command": "deno task --cwd web/server build"
     },
     "dev": {
-      "dependencies": ["build:apps"],
+      "dependencies": [
+        "build:apps",
+        "fetch:firmware"
+      ],
       "command": "deno task --cwd web/server dev"
     },
-    "check": "deno task --cwd web/client check && deno task --cwd web/server check && deno check scripts && deno lint && deno fmt --check"
+    "check": "deno task --cwd web/client check && deno task --cwd web/server check && deno check scripts && deno lint && deno fmt --check",
+    "fetch:firmware": {
+      "description": "実機用ファームを GitHub Release から web/build/firmware へ",
+      "command": "deno run -P=firmware scripts/fetch_firmware.ts"
+    }
   },
   "permissions": {
     "apps": {
       "read": true,
-      "write": ["./web/build", "./target"],
-      "run": ["cargo"],
+      "write": [
+        "./web/build",
+        "./target"
+      ],
+      "run": true,
       "env": true,
-      "net": ["registry.npmjs.org"],
+      "net": [
+        "registry.npmjs.org"
+      ],
       "import": true
+    },
+    "firmware": {
+      "read": true,
+      "write": [
+        "./web/build"
+      ],
+      "net": [
+        "github.com",
+        "objects.githubusercontent.com",
+        "release-assets.githubusercontent.com"
+      ]
     }
   },
   "nodeModulesDir": "auto",
   "minimumDependencyAge": {
     "age": "P1D",
-    "exclude": ["jsr:@kuboon/*", "jsr:@remix-kbn/*", "npm:@remix-run/*"]
+    "exclude": [
+      "jsr:@kuboon/*",
+      "jsr:@remix-kbn/*",
+      "npm:@remix-run/*"
+    ]
   },
-  "unstable": ["bundle"],
+  "unstable": [
+    "bundle"
+  ],
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "@remix-run/component"
@@ -45,8 +80,33 @@
     "@remix-run/render-middleware": "npm:@remix-run/render-middleware@^1.1.1",
     "@std/assert": "jsr:@std/assert@^1.0.19",
     "@std/encoding": "jsr:@std/encoding@^1.0.10",
-    "@std/path": "jsr:@std/path@^1.1.2"
+    "@std/path": "jsr:@std/path@^1.1.2",
+    "esptool-js": "npm:esptool-js@0.7.1"
   },
-  "fmt": { "exclude": ["web/dist", "web/build", "target", "node_modules"] },
-  "lint": { "exclude": ["web/dist", "web/build", "target", "node_modules"] }
+  "fmt": {
+    "exclude": [
+      "web/dist",
+      "web/build",
+      "target",
+      "node_modules",
+      "firmware/esp/components/esp_hosted",
+      "firmware/esp/managed_components",
+      "firmware/target",
+      "tools/precompile/target",
+      "firmware/esp/components/esp_wifi_remote"
+    ]
+  },
+  "lint": {
+    "exclude": [
+      "web/dist",
+      "web/build",
+      "target",
+      "node_modules",
+      "firmware/esp/components/esp_hosted",
+      "firmware/esp/managed_components",
+      "firmware/target",
+      "tools/precompile/target",
+      "firmware/esp/components/esp_wifi_remote"
+    ]
+  }
 }

@@ -1,0 +1,17 @@
+[package]
+name = "wasmos-esp"
+description = "実機側の Rust: メインループ・アップデータ・C（ESP-IDF）との橋渡し。staticlib として main に link する"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+publish = false
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+wasmos-host = { path = "../../host" }
+wasmtime.workspace = true
+serde = { version = "1", default-features = false, features = ["derive", "alloc"] }
+serde_json = { version = "1", default-features = false, features = ["alloc"] }
+sha2 = { version = "0.10", default-features = false }

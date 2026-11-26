@@ -11,7 +11,7 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
       - uses: denoland/setup-deno@v2
@@ -22,3 +22,19 @@ jobs:
       - run: cargo clippy --release --target wasm32-unknown-unknown -- -D warnings
       - run: deno task build
       - run: deno task check
+      # ファームウェアのホスト: 実機向け（riscv32）がビルドできること、
+      # 同じホストコードで実際のアプリが動くこと（Linux 上、画面は PNG）
+      - name: firmware host
+        working-directory: firmware
+        run: |
+          cargo build --release -p wasmos-esp --target riscv32imafc-unknown-none-elf
+          cargo build --release -p wasmos-sim
+      - name: firmware smoke test
+        run: |
+          ./firmware/target/release/wasmos-sim web/build/apps firmware/sim/smoke.txt | tee /tmp/sim.log
+          ! grep -E "trap|failed|panic" /tmp/sim.log
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: sim-screens
+          path: /tmp/wasmos-*.png

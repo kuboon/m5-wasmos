@@ -1,0 +1,18 @@
+# esp_wifi_remote 0.8.5 は esp_hosted を上限なしで要求するので、依存解決のときに
+# esp_hosted 3.x の manifest も評価され、そこにある if 条件の Kconfig が参照される。
+# 実際に使う esp_hosted 1.4.0 にはこれらが無く「Kconfig が見つからない」で止まるので、
+# 使わない値（n）として定義だけしておく。esp_hosted を 2.x 以降に上げたら消す。
+menu "m5-wasmos: esp_hosted 3.x manifest shim"
+    config ESP_HOSTED_HOST_USB_CHERRYUSB_MANIFEST
+        bool
+        default n
+    config ESP_HOSTED_HOST_USB_CDC_ACM_MANIFEST
+        bool
+        default n
+    config ESP_HOSTED_HOST_USB_RNDIS_MANIFEST
+        bool
+        default n
+    config ESP_HOSTED_CP_TINYUSB_MANIFEST
+        bool
+        default n
+endmenu
