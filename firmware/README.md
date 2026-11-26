@@ -29,7 +29,7 @@ esp/rust/   実機側の Rust（staticlib）: メインループ、タッチの�
 ## ビルド
 
 ESP-IDF のビルドは GitHub Actions（`.github/workflows/firmware.yml`,
-`espressif/idf:v5.4.2`）で行い、 main では Release `firmware-latest`
+`espressif/idf:v5.5.1`）で行い、 main では Release `firmware-latest`
 に置く。サイトの `/flash` からブラウザで書き込める。
 
 手元でやるなら:
@@ -38,7 +38,7 @@ ESP-IDF のビルドは GitHub Actions（`.github/workflows/firmware.yml`,
 deno task build:apps                       # ランチャーの .cwasm（ファームに埋め込む）
 cd firmware
 cargo build --release -p wasmos-esp --target riscv32imafc-unknown-none-elf
-cd esp && idf.py build flash monitor       # ESP-IDF v5.4
+cd esp && idf.py build flash monitor       # ESP-IDF v5.5
 ```
 
 ホストだけを Linux で試す:
