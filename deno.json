@@ -88,7 +88,11 @@
       "web/dist",
       "web/build",
       "target",
-      "node_modules"
+      "node_modules",
+      "firmware/esp/components/esp_hosted",
+      "firmware/esp/managed_components",
+      "firmware/target",
+      "tools/precompile/target"
     ]
   },
   "lint": {
@@ -96,7 +100,11 @@
       "web/dist",
       "web/build",
       "target",
-      "node_modules"
+      "node_modules",
+      "firmware/esp/components/esp_hosted",
+      "firmware/esp/managed_components",
+      "firmware/target",
+      "tools/precompile/target"
     ]
   }
 }
