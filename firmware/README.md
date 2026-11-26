@@ -29,7 +29,7 @@ esp/rust/   実機側の Rust（staticlib）: メインループ、タッチの�
 ## ビルド
 
 ESP-IDF のビルドは GitHub Actions（`.github/workflows/firmware.yml`,
-`espressif/idf:v5.5.1`）で行い、 main では Release `firmware-latest`
+`espressif/idf:v5.5.6`）で行い、 main では Release `firmware-latest`
 に置く。サイトの `/flash` からブラウザで書き込める。
 
 手元でやるなら:
