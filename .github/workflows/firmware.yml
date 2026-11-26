@@ -48,6 +48,9 @@ jobs:
         working-directory: firmware/esp
         run: |
           . "$IDF_PATH/export.sh"
+          # IDF 5.4.2 同梱の component manager は、候補（esp_hosted 3.x）の manifest にある
+          # $CONFIG{...} 条件を評価できずに落ちるので新しくする
+          python -m pip install -q -U "idf-component-manager>=2.2"
           idf.py build
           idf.py merge-bin -o m5-wasmos.bin
           ls -la build/*.bin
