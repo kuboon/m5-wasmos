@@ -58,15 +58,22 @@ jobs:
             rm -rf build
           fi
           idf.py build
-          idf.py merge-bin -o m5-wasmos.bin
-          ls -la build/*.bin
+          # アプリ本体も build/m5-wasmos.bin なので、統合イメージは別名で作る
+          # （同名にすると入力を上書きして壊れたイメージになる）
+          idf.py merge-bin -o flash_image.bin
+          mkdir -p dist
+          cp build/flash_image.bin dist/m5-wasmos.bin
+          ls -la build/*.bin dist/
+          # bootloader(0x2000) + partition table + app が入っているはず。小さすぎたら失敗にする
+          size=$(stat -c %s dist/m5-wasmos.bin)
+          test "$size" -gt 1000000
       - name: firmware.json
         shell: bash
         run: |
           engine=$(tools/precompile/target/release/precompile --engine-id)
           printf '{"commit":"%s","engine":"%s","builtAt":"%s"}\n' \
-            "$GITHUB_SHA" "$engine" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > firmware/esp/build/firmware.json
-          cat firmware/esp/build/firmware.json
+            "$GITHUB_SHA" "$engine" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > firmware/esp/dist/firmware.json
+          cat firmware/esp/dist/firmware.json
       # 依存の版を固定したくなったときのために、解決結果を残す
       - uses: actions/upload-artifact@v7
         if: always()
@@ -77,9 +84,9 @@ jobs:
         with:
           name: firmware
           path: |
-            firmware/esp/build/m5-wasmos.bin
+            firmware/esp/dist/m5-wasmos.bin
+            firmware/esp/dist/firmware.json
             firmware/esp/build/m5-wasmos.elf
-            firmware/esp/build/firmware.json
 
   publish:
     if: github.ref == 'refs/heads/main'
