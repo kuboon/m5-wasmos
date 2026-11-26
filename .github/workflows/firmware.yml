@@ -40,14 +40,13 @@ jobs:
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
       # ランチャーの .cwasm をファームに埋め込む（保存領域が空のとき用）
       - run: deno task build:apps
-      - name: Rust (staticlib)
-        working-directory: firmware
-        run: cargo build --release -p wasmos-esp --target riscv32imafc-unknown-none-elf
       - name: ESP-IDF build
         shell: bash
         working-directory: firmware/esp
         run: |
           . "$IDF_PATH/export.sh"
+          # Rust の静的ライブラリ（ESP-IDF の binutils で soft-float の部品を取り除くのでここで）
+          ./build_rust.sh
           # 依存解決の途中で候補（esp_hosted 3.x など）の Kconfig 条件が見つからず configure が
           # 止まることがある。1 回目で dependencies.lock が書かれるので、2 回目はそれを使う
           if [ ! -f dependencies.lock ]; then

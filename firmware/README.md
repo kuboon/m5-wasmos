@@ -36,9 +36,10 @@ ESP-IDF のビルドは GitHub Actions（`.github/workflows/firmware.yml`,
 
 ```bash
 deno task build:apps                       # ランチャーの .cwasm（ファームに埋め込む）
-cd firmware
-cargo build --release -p wasmos-esp --target riscv32imafc-unknown-none-elf
-cd esp && idf.py build flash monitor       # ESP-IDF v5.5
+cd firmware/esp
+. $IDF_PATH/export.sh
+./build_rust.sh                            # Rust の staticlib（soft-float の部品を除く。理由はスクリプト内）
+idf.py build flash monitor       # ESP-IDF v5.5
 ```
 
 ホストだけを Linux で試す:
