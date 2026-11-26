@@ -12,6 +12,17 @@ M5Stack Tab5 用の wasm アプリ OS。概要は README.md。
 - アプリは `wasm32-unknown-unknown` + wit-bindgen（wasip2 の std は wasi:cli や
   filesystem を import してしまうので使わない）
 
+## ファームウェア（firmware/）
+
+- `firmware/host` はハード非依存（no_std）。変更は `firmware/sim` で Linux
+  上で確かめられる （`wasmos-sim web/build/apps firmware/sim/smoke.txt` → PNG）
+- wasmtime の版や `host/src/engine.rs` の設定を変えたら `ENGINE_ID` を上げる
+  （サイトの .cwasm と実機のエンジンが一致しないと読めない）
+- ESP-IDF のビルドは CI のみ（このサンドボックスから Espressif
+  のサーバに出られない）
+- C と Rust の境界は `firmware/esp/main/wasmos_hw.h` と
+  `firmware/esp/rust/src/hw.rs`。両方揃える
+
 ## サイト（web/）
 
 kuboon/deno-remix-tmpl の static モード（SSG → GitHub Pages）を縮めたもの。

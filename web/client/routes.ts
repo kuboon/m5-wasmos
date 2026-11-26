@@ -14,7 +14,12 @@ export const routes = route(base, {
   sim: get("/sim"),
   /** 指定アプリから起動するシミュレータ（アプリごとに静的生成される） */
   simApp: get("/sim/:app"),
+  /** 実機への書き込みと Wi-Fi 設定（Web Serial） */
+  flash: get("/flash"),
 });
 
 /** 実機とシミュレータが読む manifest の URL（サイト内パス） */
 export const manifestPath = `${base}/apps/manifest.json`;
+
+/** 実機用ファームウェア（scripts/fetch_firmware.ts が置く） */
+export const firmwarePath = `${base}/firmware/m5-wasmos.bin`;

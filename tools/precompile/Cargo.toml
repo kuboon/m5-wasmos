@@ -1,0 +1,12 @@
+[package]
+name = "precompile"
+description = "wasm コンポーネントを実機用（pulley32）の .cwasm に事前コンパイルする"
+edition = "2021"
+version = "0.1.0"
+publish = false
+
+[workspace]
+
+[dependencies]
+wasmos-host = { path = "../../firmware/host", features = ["precompile"] }
+wasmtime = { version = "=51.0.0", default-features = false, features = ["std", "runtime", "component-model", "pulley", "cranelift"] }

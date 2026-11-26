@@ -55,6 +55,7 @@ export function Layout(handle: Handle<LayoutProps>) {
             <nav mix={navStyle}>
               <a href={routes.home.href()}>Home</a>
               <a href={routes.sim.href()}>Simulator</a>
+              <a href={routes.flash.href()}>書き込み</a>
               <a href="https://github.com/kuboon/m5-wasmos">GitHub</a>
             </nav>
           </header>

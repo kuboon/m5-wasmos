@@ -1,0 +1,21 @@
+# ファームウェア側（ホスト）のワークスペース。アプリ（wasm32）とはターゲットが違うので分ける。
+[workspace]
+resolver = "2"
+members = ["host", "sim", "esp/rust"]
+# esp/rust は riscv32imafc-unknown-none-elf 専用（staticlib, no_std）
+default-members = ["host", "sim"]
+
+[workspace.package]
+edition = "2021"
+version = "0.1.0"
+license = "MIT"
+
+[workspace.dependencies]
+wasmtime = { version = "=51.0.0", default-features = false, features = ["runtime", "component-model", "pulley"] }
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+debug = false

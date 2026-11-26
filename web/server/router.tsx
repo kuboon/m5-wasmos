@@ -20,6 +20,7 @@ import { Layout } from "../client/layout.tsx";
 import { routes } from "../client/routes.ts";
 import * as Home from "../client/pages/index.tsx";
 import * as Sim from "../client/pages/sim.tsx";
+import * as Flash from "../client/pages/flash.tsx";
 
 export { base };
 
@@ -45,6 +46,23 @@ const appFiles = await createFileTree({
   rootDir: appsDir,
   basePath: `${base}/apps`,
 });
+
+/** 実機用ファーム（`deno task fetch:firmware`。まだ無ければ空） */
+const firmwareDir = `${import.meta.dirname}/../build/firmware`;
+const firmwareFiles = await Deno.stat(firmwareDir).then(
+  () => createFileTree({ rootDir: firmwareDir, basePath: `${base}/firmware` }),
+  () => null,
+);
+const firmwareInfo = await Deno.readTextFile(`${firmwareDir}/firmware.json`)
+  .then((t) => {
+    const j = JSON.parse(t) as {
+      commit: string;
+      engine: string;
+      builtAt: string;
+    };
+    return `commit ${j.commit.slice(0, 7)} / ${j.engine} / ${j.builtAt}`;
+  })
+  .catch(() => null);
 
 const router = createRouter({ middleware: [render({ assets })] });
 
@@ -85,13 +103,31 @@ router.map(routes.simApp, (context) =>
     </Layout>,
   ));
 
+router.map(routes.flash, (context: AppContext) =>
+  context.render(
+    <Layout
+      title={Flash.title}
+      description={Flash.description}
+      script={clientRuntime}
+    >
+      <Flash.default info={firmwareInfo} />
+    </Layout>,
+  ));
+
 router.get(`${base}/static/*path`, ({ request }) => staticFiles.fetch(request));
 router.get(`${base}/apps/*path`, ({ request }) => appFiles.fetch(request));
+if (firmwareFiles) {
+  router.get(
+    `${base}/firmware/*path`,
+    ({ request }) => firmwareFiles.fetch(request),
+  );
+}
 router.get(`${assetsPath}/*path`, ({ request }) => assets.fetch(request));
 
 export const entryPoints: readonly string[] = [
   "/",
   ...[...appFiles.paths()].map((p) => stripBase(p, base)),
+  ...[...(firmwareFiles?.paths() ?? [])].map((p) => stripBase(p, base)),
 ];
 
 export default router;

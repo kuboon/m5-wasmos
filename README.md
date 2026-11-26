@@ -4,6 +4,7 @@ M5Stack Tab5（ESP32-P4）用の小さな OS。アプリは全部 **wasm コン�
 ランチャーもその 1 つ。ファームウェアを焼き直さずにアプリを差し替えられる。
 
 - サイト / シミュレータ: https://kuboon.github.io/m5-wasmos/
+- 実機への書き込み（Chrome / Edge）: https://kuboon.github.io/m5-wasmos/flash
 - アプリ一覧（実機が読む）:
   https://kuboon.github.io/m5-wasmos/apps/manifest.json
 
@@ -16,7 +17,8 @@ apps/*/         アプリ（launcher / paint / weather）
 scripts/        build_apps.ts — wasm コンポーネント化、jco 変換、manifest 生成
 web/            サイト（Remix v3 + @remix-kbn/ssg、kuboon/deno-remix-tmpl の static モード）
   client/sim/   ブラウザ版ホスト（canvas / pointer events / fetch で WIT を実装）
-firmware/       実機ファームウェア（未着手）
+firmware/       実機ファームウェア（ESP-IDF + wasmtime/Pulley）。firmware/README.md
+tools/          precompile（実機用 .cwasm を作る）、make_font.py
 ```
 
 ## ホスト API の考え方（`wit/wasmos.wit`）
