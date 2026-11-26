@@ -286,6 +286,9 @@ static void wifi_task(void *arg) {
 }
 
 static void wifi_init(void) {
+    // ESP32-C6 の電源は I/O エキスパンダの WIFI_EN。入れないと SDIO の初期化がタイムアウトする
+    ESP_ERROR_CHECK(bsp_feature_enable(BSP_FEATURE_WIFI, true));
+    vTaskDelay(pdMS_TO_TICKS(100));
     s_wifi_events = xEventGroupCreate();
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());

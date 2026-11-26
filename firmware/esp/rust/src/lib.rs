@@ -46,17 +46,18 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
     }
 }
 
-// wasmtime（no_std）が求めるスレッドローカル。wasm を動かすのは 1 タスクだけ
-static mut TLS: *mut u8 = core::ptr::null_mut();
+// wasmtime（no_std）が求めるスレッドローカル。wasm を動かすのは 1 タスクだけ。
+// wasmtime 51 から slot 引数付き（0 = ランタイム、1 = component-model-async）
+static mut TLS: [*mut u8; 2] = [core::ptr::null_mut(); 2];
 
 #[no_mangle]
-extern "C" fn wasmtime_tls_get() -> *mut u8 {
-    unsafe { TLS }
+extern "C" fn wasmtime_tls_get(slot: usize) -> *mut u8 {
+    unsafe { TLS[slot] }
 }
 
 #[no_mangle]
-extern "C" fn wasmtime_tls_set(p: *mut u8) {
-    unsafe { TLS = p }
+extern "C" fn wasmtime_tls_set(slot: usize, p: *mut u8) {
+    unsafe { TLS[slot] = p }
 }
 
 // --- メイン -------------------------------------------------------------------
