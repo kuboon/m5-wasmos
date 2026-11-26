@@ -58,6 +58,12 @@ jobs:
           printf '{"commit":"%s","engine":"%s","builtAt":"%s"}\n' \
             "$GITHUB_SHA" "$engine" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > firmware/esp/build/firmware.json
           cat firmware/esp/build/firmware.json
+      # 依存の版を固定したくなったときのために、解決結果を残す
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: dependencies-lock
+          path: firmware/esp/dependencies.lock
       - uses: actions/upload-artifact@v7
         with:
           name: firmware
