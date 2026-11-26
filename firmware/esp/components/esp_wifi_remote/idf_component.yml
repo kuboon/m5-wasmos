@@ -1,0 +1,10 @@
+version: 0.8.5
+url: https://github.com/espressif/esp-wifi-remote
+description: Utility wrapper for esp_wifi functionality on remote targets
+# m5-wasmos: 同梱版。esp_hosted は同じ components/ にある 1.4.0 を使うので依存から外した
+# （レジストリの esp_hosted を引かないため。../esp_hosted/VENDORED.md）
+dependencies:
+  espressif/eppp_link:
+    version: '>=0.1'
+  idf:
+    version: '>=5.3'

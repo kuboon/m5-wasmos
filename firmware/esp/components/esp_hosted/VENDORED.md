@@ -9,3 +9,9 @@
 ホスト側も 1.4.0 にしたいが、レジストリ経由だと esp_wifi_remote の依存解決で esp_hosted 3.x の
 manifest まで評価され、そこにある Kconfig 条件で ESP-IDF の configure が止まる。
 プロジェクトの components/ にあるものはレジストリより優先されるので、ここに置いている。
+
+## esp_wifi_remote 0.8.5（../esp_wifi_remote）
+
+- 元: https://github.com/espressif/esp-wifi-remote タグ wifi_remote-v0.8.5 の components/esp_wifi_remote（examples などは省いた）
+- idf_component.yml から espressif/esp_hosted の依存を外した。レジストリにあるとそれ経由で
+  esp_hosted 3.x の manifest が評価され、同じ問題が起きるため

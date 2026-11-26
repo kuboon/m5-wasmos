@@ -92,7 +92,8 @@
       "firmware/esp/components/esp_hosted",
       "firmware/esp/managed_components",
       "firmware/target",
-      "tools/precompile/target"
+      "tools/precompile/target",
+      "firmware/esp/components/esp_wifi_remote"
     ]
   },
   "lint": {
@@ -104,7 +105,8 @@
       "firmware/esp/components/esp_hosted",
       "firmware/esp/managed_components",
       "firmware/target",
-      "tools/precompile/target"
+      "tools/precompile/target",
+      "firmware/esp/components/esp_wifi_remote"
     ]
   }
 }
