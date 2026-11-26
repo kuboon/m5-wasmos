@@ -141,6 +141,73 @@ int wasmos_hw_touch(uint16_t *xs, uint16_t *ys, int max) {
 }
 
 // ---------------------------------------------------------------------------
+// 電源（充電と電池）
+//
+// Tab5 の充電 IC（IP2326）は I/O エキスパンダ 0x44 の P7（CHG_EN、High で充電）で止まる。
+// BSP の expander ドライバは初期化でチップをリセットし、全ピンが Hi-Z + プルダウンになる
+// ので、何もしないと充電しない。M5Tab5-UserDemo（setChargeEnable(true)）と M5Unified
+// （Power_Class の Tab5 初期化）に合わせて、起動時に CHG_EN を High にする。
+// P5（nCHG_QC_EN、Low で 1A / High で 0.5A）も両者と同じく Low にする。
+//
+// 電池の電圧・電流は INA226（0x41、シャント 5mΩ）。充電中は電流が負に出るので符号を反転する
+
+#define CHG_QC_N_PIN IO_EXPANDER_PIN_NUM_5
+#define CHG_EN_PIN IO_EXPANDER_PIN_NUM_7
+#define INA226_ADDR 0x41
+
+static i2c_master_dev_handle_t s_ina226;
+
+static void power_init(void) {
+    esp_io_expander_handle_t ioe = bsp_io_expander1_init();
+    esp_err_t err = ESP_FAIL;
+    if (ioe) {
+        err = esp_io_expander_set_level(ioe, CHG_QC_N_PIN | CHG_EN_PIN, 0);
+        err |= esp_io_expander_set_dir(ioe, CHG_QC_N_PIN | CHG_EN_PIN, IO_EXPANDER_OUTPUT);
+        err |= esp_io_expander_set_output_mode(ioe, CHG_QC_N_PIN | CHG_EN_PIN,
+                                               IO_EXPANDER_OUTPUT_MODE_PUSH_PULL);
+        err |= esp_io_expander_set_level(ioe, CHG_EN_PIN, 1);
+    }
+    if (err != ESP_OK) ESP_LOGE(TAG, "charge enable failed");
+
+    i2c_device_config_t dev = {
+        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
+        .device_address = INA226_ADDR,
+        .scl_speed_hz = 400000,
+    };
+    if (i2c_master_bus_add_device(bsp_i2c_get_handle(), &dev, &s_ina226) != ESP_OK) s_ina226 = NULL;
+}
+
+static bool ina226_read(uint8_t reg, uint16_t *out) {
+    uint8_t buf[2];
+    if (!s_ina226 || i2c_master_transmit_receive(s_ina226, &reg, 1, buf, 2, 50) != ESP_OK) return false;
+    *out = (uint16_t)(buf[0] << 8 | buf[1]);
+    return true;
+}
+
+// 電池電圧 [mV] と電流 [mA]（+ が充電、- が放電）
+static bool battery_read(int *mv, int *ma) {
+    uint16_t bus, shunt;
+    if (!ina226_read(0x02, &bus) || !ina226_read(0x01, &shunt)) return false;
+    *mv = bus * 5 / 4;               // 1.25mV/LSB
+    *ma = -(int16_t)shunt / 2;       // 2.5uV/LSB ÷ 5mΩ = 0.5mA/LSB
+    return true;
+}
+
+static void power_report(void) {
+    int mv, ma;
+    bool chg_en = false;
+    esp_io_expander_handle_t ioe = bsp_io_expander1_init();
+    uint32_t levels = 0;
+    if (ioe && esp_io_expander_get_level(ioe, CHG_EN_PIN, &levels) == ESP_OK) chg_en = levels != 0;
+    if (!battery_read(&mv, &ma)) {
+        printf("power: CHG_EN=%d, battery: read failed\n", chg_en);
+        return;
+    }
+    const char *state = ma > 10 ? "charging" : ma < -10 ? "discharging" : "idle";
+    printf("power: CHG_EN=%d, battery %d.%03dV %dmA (%s)\n", chg_en, mv / 1000, mv % 1000, ma, state);
+}
+
+// ---------------------------------------------------------------------------
 // 保存領域
 
 #define APPS_DIR "/apps"
@@ -489,6 +556,7 @@ void wasmos_hw_http_free(uint32_t handle) {
 //   wifi <0|1> <ssid> [pass] 保存（0: 自宅, 1: テザリング など。0 を先に試す）
 //   wifi <0|1> clear         消去
 //   update                   アプリを更新
+//   power                    充電の設定と電池の電圧・電流
 //   reboot
 //
 // SSID に空白がある（"xxx の iPhone" など）ときはタブ区切りで送る。サイトの書き込みページはそうする
@@ -536,10 +604,12 @@ static void console_task(void *arg) {
         } else if (!strcmp(argv[0], "update")) {
             s_update_requested = true;
             printf("update requested\n");
+        } else if (!strcmp(argv[0], "power")) {
+            power_report();
         } else if (!strcmp(argv[0], "reboot")) {
             esp_restart();
         } else {
-            printf("commands: wifi, update, reboot\n");
+            printf("commands: wifi, update, power, reboot\n");
         }
     }
 }
@@ -557,6 +627,8 @@ void app_main(void) {
         nvs_flash_init();
     }
     display_init();
+    power_init();
+    power_report();
     storage_init();
 
     s_http_queue = xQueueCreate(HTTP_SLOTS, sizeof(int));
