@@ -53,6 +53,8 @@ jobs:
           if [ ! -f dependencies.lock ]; then
             idf.py reconfigure || true
             echo "---- dependencies.lock ----"; cat dependencies.lock || true
+            # 1 回目の解決で見た候補の Kconfig 条件が build/ に残るので消す（lock と managed_components は残す）
+            rm -rf build
           fi
           idf.py build
           idf.py merge-bin -o m5-wasmos.bin
