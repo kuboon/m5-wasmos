@@ -22,6 +22,10 @@
 #include "esp_http_client.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_touch.h"
+#include "esp_lcd_touch_gt911.h"
+#include "esp_lcd_touch_st7123.h"
+#include "esp_lcd_panel_io.h"
+#include "driver/i2c_master.h"
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_netif_sntp.h"
@@ -71,12 +75,42 @@ void wasmos_hw_free(void *p) { heap_caps_free(p); }
 static esp_lcd_panel_handle_t s_panel;
 static esp_lcd_touch_handle_t s_touch;
 
+// Tab5 は製造時期で画面とタッチが違う。BSP の bsp_get_board_version()（static で呼べない）と同じ判定
+typedef enum { BOARD_UNKNOWN, BOARD_ILI9881C_GT911, BOARD_ST7123, BOARD_ST7121 } board_version_t;
+
+static board_version_t detect_board(void) {
+    if (bsp_feature_enable(BSP_FEATURE_TOUCH, true) != ESP_OK) return BOARD_UNKNOWN;
+    vTaskDelay(pdMS_TO_TICKS(500));
+    i2c_master_bus_handle_t bus = bsp_i2c_get_handle();
+    if (i2c_master_probe(bus, ESP_LCD_TOUCH_IO_I2C_ST7123_ADDRESS, 100) == ESP_OK) {
+        esp_lcd_panel_io_handle_t io = NULL;
+        esp_lcd_panel_io_i2c_config_t cfg = ESP_LCD_TOUCH_IO_I2C_ST7123_CONFIG();
+        uint8_t fw = 0;
+        if (esp_lcd_new_panel_io_i2c(bus, &cfg, &io) != ESP_OK) return BOARD_UNKNOWN;
+        esp_err_t err = esp_lcd_panel_io_rx_param(io, 0x0000, &fw, sizeof fw);
+        esp_lcd_panel_io_del(io);
+        if (err != ESP_OK) return BOARD_UNKNOWN;
+        return fw == 1 ? BOARD_ST7121 : BOARD_ST7123;
+    }
+    if (i2c_master_probe(bus, ESP_LCD_TOUCH_IO_I2C_GT911_ADDRESS_BACKUP, 100) == ESP_OK) {
+        return BOARD_ILI9881C_GT911;
+    }
+    return BOARD_UNKNOWN;
+}
+
 static void display_init(void) {
     ESP_ERROR_CHECK(bsp_i2c_init());
+    // LVGL 版の bsp_display_start と同じ順: 画面の電源 → 機種判定 → DSI の速度を選んで初期化
+    ESP_ERROR_CHECK(bsp_feature_enable(BSP_FEATURE_LCD, true));
+    board_version_t board = detect_board();
+    ESP_LOGI(TAG, "board version: %d", board);
     bsp_display_config_t cfg = {
-        .dsi_bus = {.phy_clk_src = 0, .lane_bit_rate_mbps = 0},
+        .dsi_bus = {
+            .phy_clk_src = 0,  // ドライバの既定
+            // ST7121 の版だけ 965Mbps（BSP の BSP_LCD_ST712X_MIPI_DSI_LANE_BITRATE_MBPS）
+            .lane_bit_rate_mbps = board == BOARD_ST7121 ? 965 : BSP_LCD_MIPI_DSI_LANE_BITRATE_MBPS,
+        },
     };
-    // lane_bit_rate_mbps / phy_clk_src は 0 で BSP の既定値
     esp_lcd_panel_io_handle_t io = NULL;
     ESP_ERROR_CHECK(bsp_display_new(&cfg, &s_panel, &io));
     ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(s_panel, true));

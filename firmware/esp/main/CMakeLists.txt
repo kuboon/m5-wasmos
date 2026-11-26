@@ -1,7 +1,7 @@
 idf_component_register(
     SRCS "main.c"
     INCLUDE_DIRS "."
-    REQUIRES nvs_flash esp_http_client esp_timer esp_netif esp_event esp_wifi spiffs mbedtls esp_lcd esp_driver_usb_serial_jtag vfs
+    REQUIRES nvs_flash esp_http_client esp_timer esp_netif esp_event esp_wifi spiffs mbedtls esp_lcd esp_driver_usb_serial_jtag vfs esp_driver_i2c
 )
 
 # Rust 側（firmware/esp/rust）。firmware/esp/build_rust.sh で作っておく
