@@ -48,6 +48,12 @@ jobs:
         working-directory: firmware/esp
         run: |
           . "$IDF_PATH/export.sh"
+          # 依存解決の途中で候補（esp_hosted 3.x など）の Kconfig 条件が見つからず configure が
+          # 止まることがある。1 回目で dependencies.lock が書かれるので、2 回目はそれを使う
+          if [ ! -f dependencies.lock ]; then
+            idf.py reconfigure || true
+            echo "---- dependencies.lock ----"; cat dependencies.lock || true
+          fi
           idf.py build
           idf.py merge-bin -o m5-wasmos.bin
           ls -la build/*.bin
