@@ -1,3 +1,5 @@
+# 変えたら web/client/islands/flasher.tsx の NVS_START / APP_START も揃える
+# （書き込みページは NVS を飛ばして書き、Wi-Fi の設定を残す）
 # Name,  Type, SubType, Offset,   Size
 nvs,     data, nvs,     0x9000,   0x6000
 phy_init,data, phy,     0xf000,   0x1000
