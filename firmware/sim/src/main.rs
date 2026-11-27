@@ -28,6 +28,8 @@ struct Sim {
     http: HashMap<u32, Result<HttpResponse, String>>,
     next: u32,
     battery: Option<Battery>,
+    /// present で送った画素数の累計（実機ではパネルへの転送量に当たる）
+    presented: u64,
 }
 
 impl Platform for Sim {
@@ -66,7 +68,8 @@ impl Platform for Sim {
     fn http_cancel(&mut self, h: u32) {
         self.http.remove(&h);
     }
-    fn present(&mut self, rgba: &[u8], _w: u32, _h: u32, _dirty: IRect) {
+    fn present(&mut self, rgba: &[u8], _w: u32, _h: u32, dirty: IRect) {
+        self.presented += (dirty.w * dirty.h) as u64;
         self.screen.clear();
         self.screen.extend_from_slice(rgba);
     }
@@ -125,6 +128,7 @@ fn main() -> wasmtime::Result<()> {
         http: HashMap::new(),
         next: 1,
         battery: None,
+        presented: 0,
     };
     let engine = wasmos_host::engine::engine_for("pulley64")?;
     let mut rt = Runtime::with_engine(engine, sim, FONT, &launcher)?;
@@ -156,13 +160,20 @@ fn main() -> wasmtime::Result<()> {
                 println!("tap {} {}: {:?}", n(1), n(2), d);
             }
             Some("drag") => {
-                touch(&mut rt, TouchPhase::Down, n(1), n(2));
+                rt.platform().presented = 0;
+                let mut d = touch(&mut rt, TouchPhase::Down, n(1), n(2));
                 for i in 1..=10 {
                     let x = n(1) + (n(3) - n(1)) * i / 10;
                     let y = n(2) + (n(4) - n(2)) * i / 10;
-                    touch(&mut rt, TouchPhase::Move, x, y);
+                    d += touch(&mut rt, TouchPhase::Move, x, y);
                 }
-                touch(&mut rt, TouchPhase::Up, n(3), n(4));
+                d += touch(&mut rt, TouchPhase::Up, n(3), n(4));
+                // 1 イベントあたりの処理時間と、パネルへ送る画素数
+                println!(
+                    "drag: {:?}/event, {} px/event presented",
+                    d / 12,
+                    rt.platform().presented / 12
+                );
             }
             Some("home") => rt.go_home(),
             Some("wait") => {

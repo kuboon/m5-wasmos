@@ -58,6 +58,7 @@ impl App for Paint {
     fn on_event(&mut self, event: Event) {
         let Event::Touch(touches) = event else { return };
 
+        let pressed = (self.clear.pressed(), self.back.pressed());
         if self.back.handle(&touches) {
             system::exit();
             return;
@@ -86,8 +87,13 @@ impl App for Paint {
                 _ => {}
             }
         }
-        // ボタンの押下表示も更新
-        f.pop_clip().with(|f| self.chrome(f)).submit();
+        // ツールバーは押下表示が変わったときだけ描き直す。毎回描くと描いた範囲が
+        // 画面上端からストロークまでの全幅になり、パネルへの転送が重くなる
+        f = f.pop_clip();
+        if pressed != (self.clear.pressed(), self.back.pressed()) {
+            f = f.with(|f| self.chrome(f));
+        }
+        f.submit();
     }
 }
 
