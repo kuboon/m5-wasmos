@@ -258,14 +258,14 @@ fn draw_chart(mut f: Frame, area: Rect, samples: &[Sample]) -> Frame {
             );
         }
         if hour == "12:00" {
-            if let Some((m, d, wd)) = date_label(date) {
+            if let Some((_, d, wd)) = date_label(date) {
                 f = f.text_aligned(
                     x_of(i),
                     plot.y + plot.h + 14,
                     20,
                     color::FG,
                     TextAlign::Center,
-                    format!("{m}/{d}({wd})"),
+                    format!("{d}({wd})"),
                 );
             }
         }
