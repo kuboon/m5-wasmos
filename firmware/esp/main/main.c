@@ -115,8 +115,7 @@ static void display_init(void) {
     ESP_ERROR_CHECK(bsp_display_new(&cfg, &s_panel, &io));
     ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(s_panel, true));
     ESP_ERROR_CHECK(bsp_display_brightness_init());
-    bsp_display_backlight_on();
-    bsp_display_brightness_set(80);
+    wasmos_hw_backlight(true);
 
     bsp_touch_config_t tcfg = {0};
     if (bsp_touch_new(&tcfg, &s_touch) != ESP_OK) {
@@ -124,6 +123,11 @@ static void display_init(void) {
         s_touch = NULL;
     }
 }
+
+// バックライトだけを消す・点ける（スリープ）。bsp_display_enter_sleep はタッチも
+// 眠らせてしまい、触って起こせなくなるので使わない
+#define BRIGHTNESS 80
+void wasmos_hw_backlight(bool on) { bsp_display_brightness_set(on ? BRIGHTNESS : 0); }
 
 void wasmos_hw_draw(int x0, int y0, int x1, int y1, const uint16_t *pixels) {
     if (!s_panel) return;

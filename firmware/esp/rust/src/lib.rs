@@ -63,6 +63,8 @@ extern "C" fn wasmtime_tls_set(slot: usize, p: *mut u8) {
 // --- メイン -------------------------------------------------------------------
 
 pub(crate) const LAUNCHER: &str = "launcher";
+/// この間タッチが無ければバックライトを消す（スリープ）
+const SLEEP_AFTER_MS: u64 = 60_000;
 
 fn load_installed() -> Vec<AppMeta> {
     update::local_manifest()
@@ -142,16 +144,37 @@ pub extern "C" fn wasmos_main() {
     let mut input = input::Tracker::new();
     let mut points = Vec::new();
     let mut last_status = String::new();
-    let mut last_touch = 0u64;
+    let mut last_touch = hw::now_ms();
+    // スリープ中（バックライトを消している）
+    let mut asleep = false;
+    // 起こしたタッチは指を離すまでアプリに渡さない（うっかりタップしないように）
+    let mut waking = false;
 
     loop {
         hw::touch(&mut points);
         let now = hw::now_ms();
         if !points.is_empty() {
             last_touch = now;
-        } else if now - last_touch > 1000 {
-            // storage はタッチが 1 秒止んでからフラッシュに書く（描画を止めないように）
-            rt.platform().flush_storage();
+            if asleep {
+                hw::backlight(true);
+                asleep = false;
+                waking = true;
+                hw::log("wake");
+            }
+        } else {
+            waking = false;
+            if now - last_touch > 1000 {
+                // storage はタッチが 1 秒止んでからフラッシュに書く（描画を止めないように）
+                rt.platform().flush_storage();
+            }
+            if !asleep && now - last_touch > SLEEP_AFTER_MS {
+                hw::backlight(false);
+                asleep = true;
+                hw::log("sleep");
+            }
+        }
+        if waking {
+            points.clear();
         }
         let (events, home) = input.update(&points);
         if home {
@@ -178,6 +201,7 @@ pub extern "C" fn wasmos_main() {
                 hw::log("update: offline");
             }
         }
-        hw::delay_ms(8);
+        // スリープ中はタッチの読み取りを間引く（アプリのタイマーなどは動かし続ける）
+        hw::delay_ms(if asleep { 50 } else { 8 });
     }
 }
