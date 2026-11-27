@@ -37,6 +37,8 @@ int wasmos_hw_file_write(const char *name, const uint8_t *buf, size_t len);  // 
 
 // ネットワーク状態の説明文。接続済みなら 1
 int wasmos_hw_net_status(char *buf, size_t cap);
+// 電池の電圧 [mV] と電流 [mA]（+ が充電、- が放電）。読めたら 1
+int wasmos_hw_battery(int *mv, int *ma);
 // シリアルの "update" コマンドなど。読むと消える
 bool wasmos_hw_take_update_request(void);
 

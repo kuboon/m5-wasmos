@@ -193,6 +193,8 @@ static bool battery_read(int *mv, int *ma) {
     return true;
 }
 
+int wasmos_hw_battery(int *mv, int *ma) { return battery_read(mv, ma) ? 1 : 0; }
+
 static void power_report(void) {
     int mv, ma;
     bool chg_en = false;

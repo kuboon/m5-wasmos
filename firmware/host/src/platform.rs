@@ -52,12 +52,26 @@ pub struct HttpResponse {
     pub body: Vec<u8>,
 }
 
+/// 電池の状態（WIT の `system.battery` と同じ）
+#[derive(Clone, Copy, Debug)]
+pub struct Battery {
+    pub voltage_mv: u32,
+    /// + が充電、- が放電
+    pub current_ma: i32,
+    pub cells: u8,
+}
+
 pub trait Platform: 'static {
     fn log(&mut self, message: &str);
     /// 起動からの ms
     fn now_ms(&self) -> u64;
     /// UNIX epoch ms（未同期なら None）
     fn wall_ms(&self) -> Option<u64>;
+
+    /// 電池（無い・読めないなら None）
+    fn battery(&mut self) -> Option<Battery> {
+        None
+    }
 
     /// HTTP を非同期に開始してハンドルを返す。TLS はプラットフォームが担当
     fn http_start(&mut self, req: HttpRequest) -> u32;

@@ -6,7 +6,8 @@ M5Stack Tab5 用の wasm アプリ OS。概要は README.md。
 
 - `wit/wasmos.wit` は実機ファームの焼き直しが要る唯一の境界。足す前に SDK
   （`crates/sdk`）で済まないか考える。変えたら `scripts/build_apps.ts` の
-  `ABI`、 `web/client/sim/host.ts`、（いずれ）firmware を揃える
+  `ABI`、 `web/client/sim/host.ts`、firmware（`host/src/imports.rs` と
+  `Platform`、`ENGINE_ID`）を揃える
 - アプリはイベント駆動でブロックしない。`wasi:io/poll.block` / `poll` は
   シミュレータでは使えない
 - アプリは `wasm32-unknown-unknown` + wit-bindgen（wasip2 の std は wasi:cli や
@@ -16,8 +17,8 @@ M5Stack Tab5 用の wasm アプリ OS。概要は README.md。
 
 - `firmware/host` はハード非依存（no_std）。変更は `firmware/sim` で Linux
   上で確かめられる （`wasmos-sim web/build/apps firmware/sim/smoke.txt` → PNG）
-- wasmtime の版や `host/src/engine.rs` の設定を変えたら `ENGINE_ID` を上げる
-  （サイトの .cwasm と実機のエンジンが一致しないと読めない）
+- wasmtime の版や `host/src/engine.rs` の設定、WIT を変えたら `ENGINE_ID`
+  を上げる （サイトの .cwasm と実機のエンジンが一致しないと読めない）
 - ESP-IDF のビルドは CI のみ（このサンドボックスから Espressif
   のサーバに出られない）
 - C と Rust の境界は `firmware/esp/main/wasmos_hw.h` と

@@ -14,5 +14,5 @@ pub mod platform;
 pub mod render;
 pub mod runtime;
 
-pub use platform::{HttpRequest, HttpResponse, IRect, Platform};
+pub use platform::{Battery, HttpRequest, HttpResponse, IRect, Platform};
 pub use runtime::{AppMeta, Runtime};

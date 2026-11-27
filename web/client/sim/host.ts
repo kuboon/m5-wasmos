@@ -303,6 +303,8 @@ export class Host {
       log,
       nowMs: () => BigInt(Math.floor(performance.now())),
       wallMs: () => BigInt(Date.now()),
+      // ブラウザには電池の電圧・電流が無い
+      battery: () => undefined,
       requestFrame: () => {
         if (s.frameRequested) return;
         s.frameRequested = true;
@@ -351,7 +353,7 @@ export class Host {
     };
     // jco はバージョン付き / 無しのどちらの名前でも引くことがあるので両方置く
     for (const [k, v] of Object.entries({ ...all })) {
-      all[`${k}@${k.startsWith("wasmos:") ? "0.1.0" : "0.2.3"}`] = v;
+      all[`${k}@${k.startsWith("wasmos:") ? "0.2.0" : "0.2.3"}`] = v;
     }
     return all;
   }

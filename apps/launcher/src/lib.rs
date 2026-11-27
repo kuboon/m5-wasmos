@@ -1,13 +1,17 @@
 //! ランチャー。インストール済みアプリをタイルで並べ、タップで起動する。
+//! 右上に電池の残量と充電・放電の電力を出す（電池が読めないときは出さない）。
 
 use wasmos_sdk::color::{self, with_alpha};
-use wasmos_sdk::gfx::{rect, Frame, TextAlign};
+use wasmos_sdk::gfx::{measure_text, rect, Frame, TextAlign};
+use wasmos_sdk::power::{self, Battery, Flow};
 use wasmos_sdk::ui::Scroll;
 use wasmos_sdk::{screen_size, system, App, AppInfo, Event, Rect, TouchPhase};
 
 const HEADER: i32 = 120;
 const TILE: i32 = 220;
 const GAP: i32 = 40;
+/// 電池を読み直す間隔
+const BATTERY_MS: u32 = 5000;
 
 struct Launcher {
     width: i32,
@@ -15,6 +19,8 @@ struct Launcher {
     apps: Vec<AppInfo>,
     scroll: Scroll,
     pressed: Option<usize>,
+    battery: Option<Battery>,
+    battery_timer: u32,
 }
 
 impl Launcher {
@@ -81,19 +87,61 @@ impl Launcher {
             );
         }
 
+        let title_w = measure_text("m5-wasmos", 48) as i32;
         f.pop_clip()
             .fill_rect(rect(0, 0, self.width, HEADER), color::SURFACE, 0)
             .text(48, 36, 48, color::FG, "m5-wasmos")
-            .text_aligned(
-                self.width - 48,
-                52,
+            .text(
+                48 + title_w + 24,
+                56,
                 24,
                 color::MUTED,
-                TextAlign::Right,
                 format!("{} apps", self.apps.len()),
             )
+            .with(|f| match &self.battery {
+                Some(b) => battery_status(f, self.width - 48, b),
+                None => f,
+            })
             .submit();
     }
+}
+
+/// 右端 `right` に、電池アイコン + 残量 % と、その下に電力
+fn battery_status(f: Frame, right: i32, b: &Battery) -> Frame {
+    let level = b.level();
+    let flow = b.flow();
+    let fill = match (flow, level) {
+        (Flow::Charging, _) => color::GREEN,
+        (_, 0..=9) => color::RED,
+        (_, 10..=19) => color::YELLOW,
+        _ => color::FG,
+    };
+    // 本体 60x30 + 右の端子 6x14
+    let body = rect(right - 66, 24, 60, 30);
+    let inner = body.inset(5);
+    let watts = b.power_mw().unsigned_abs();
+    let power = format!("{}.{}W", watts / 1000, watts % 1000 / 100);
+    let detail = match flow {
+        Flow::Charging => format!("充電中 {power}"),
+        Flow::Discharging => format!("放電中 {power}"),
+        Flow::Idle => "待機".into(),
+    };
+    f.stroke_rect(body, color::MUTED, 6, 3)
+        .fill_rect(rect(right - 6, 32, 6, 14), color::MUTED, 2)
+        .fill_rect(
+            rect(inner.x, inner.y, inner.w * level as i32 / 100, inner.h),
+            fill,
+            3,
+        )
+        .text_aligned(
+            body.x - 14,
+            22,
+            30,
+            color::FG,
+            TextAlign::Right,
+            format!("{level}%"),
+        )
+        .text_aligned(right, 70, 22, color::MUTED, TextAlign::Right, detail)
 }
 
 impl App for Launcher {
@@ -106,6 +154,8 @@ impl App for Launcher {
             apps,
             scroll: Scroll::default(),
             pressed: None,
+            battery: power::battery(),
+            battery_timer: system::set_timer(BATTERY_MS),
         };
         let rows = (app.apps.len() as i32 + app.columns() - 1) / app.columns();
         app.scroll.max = HEADER + GAP + rows * (TILE + 56 + GAP) - app.height;
@@ -114,7 +164,20 @@ impl App for Launcher {
     }
 
     fn on_event(&mut self, event: Event) {
-        let Event::Touch(touches) = event else { return };
+        let touches = match event {
+            Event::Touch(t) => t,
+            Event::Timer(id) if id == self.battery_timer => {
+                self.battery_timer = system::set_timer(BATTERY_MS);
+                let b = power::battery();
+                let key = |b: &Option<Battery>| b.as_ref().map(|b| (b.level(), b.power_mw() / 100));
+                if key(&b) != key(&self.battery) {
+                    self.battery = b;
+                    self.draw();
+                }
+                return;
+            }
+            _ => return,
+        };
         self.scroll.handle(&touches);
 
         for t in &touches {
