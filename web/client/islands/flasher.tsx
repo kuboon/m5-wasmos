@@ -1,7 +1,9 @@
 /**
  * ブラウザから Tab5 に書き込み、USB シリアルで設定する（Web Serial: Chrome / Edge）。
  *
- * 1. 書き込み: esptool-js で `firmware/m5-wasmos.bin`（merge-bin 済み）を 0x0 に書く
+ * 1. 書き込み: esptool-js で `firmware/m5-wasmos.bin`（merge-bin 済み）を書く。
+ *    merge-bin はパーティションの隙間を 0xFF で埋めるので、丸ごと 0x0 に書くと
+ *    NVS（Wi-Fi の設定）が消える。NVS と phy_init の範囲を飛ばして 2 つに分けて書く
  * 2. コンソール: 起動ログを表示し、Wi-Fi（2 か所）の登録や update を送る
  *
  * 2 つは同じシリアルポートを使うので同時には開けない。
@@ -35,6 +37,11 @@ type SerialLike = { requestPort(): Promise<SerialPortLike> };
 const serial = () => (navigator as unknown as { serial?: SerialLike }).serial;
 
 type Mode = "idle" | "flashing" | "console";
+
+// firmware/esp/partitions.csv と揃える。[NVS_START, APP_START) は書かない
+// （nvs 0x9000 と phy_init 0xf000。ブートローダ 0x2000 とパーティション表 0x8000 は前に入る）
+const NVS_START = 0x9000;
+const APP_START = 0x10000;
 
 export const Flasher = clientEntry(
   import.meta.url,
@@ -90,8 +97,14 @@ export const Flasher = clientEntry(
         const res = await fetch(handle.props.firmwareUrl);
         if (!res.ok) throw new Error(`firmware: HTTP ${res.status}`);
         const data = new Uint8Array(await res.arrayBuffer());
+        if (data.length <= APP_START) {
+          throw new Error(`firmware: 小さすぎます（${data.length} bytes）`);
+        }
         await loader.writeFlash({
-          fileArray: [{ data, address: 0 }],
+          fileArray: [
+            { data: data.slice(0, NVS_START), address: 0 },
+            { data: data.slice(APP_START), address: APP_START },
+          ],
           flashMode: "keep",
           flashFreq: "keep",
           flashSize: "keep",
