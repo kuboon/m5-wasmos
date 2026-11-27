@@ -79,6 +79,13 @@ impl<P: Platform> system::Host for State<P> {
         self.timers.retain(|t| t.0 != id);
         Ok(())
     }
+    fn battery(&mut self) -> Result<Option<system::BatteryStatus>> {
+        Ok(self.p.battery().map(|b| system::BatteryStatus {
+            voltage_mv: b.voltage_mv,
+            current_ma: b.current_ma,
+            cells: b.cells,
+        }))
+    }
     fn installed(&mut self) -> Result<Vec<system::AppInfo>> {
         Ok(State::installed(self))
     }

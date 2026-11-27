@@ -2,7 +2,7 @@
 use alloc::string::String;
 use alloc::vec::Vec;
 
-use wasmos_host::{HttpRequest, HttpResponse, IRect, Platform};
+use wasmos_host::{Battery, HttpRequest, HttpResponse, IRect, Platform};
 
 use crate::hw;
 
@@ -49,6 +49,14 @@ impl Platform for EspPlatform {
     }
     fn wall_ms(&self) -> Option<u64> {
         hw::wall_ms()
+    }
+    fn battery(&mut self) -> Option<Battery> {
+        // Tab5 の電池は 2 セル直列（NP-F550 互換）
+        hw::battery().map(|(voltage_mv, current_ma)| Battery {
+            voltage_mv,
+            current_ma,
+            cells: 2,
+        })
     }
 
     fn http_start(&mut self, req: HttpRequest) -> u32 {

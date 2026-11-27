@@ -1,4 +1,7 @@
-# CI 用: ランチャー → Paint → ホーム → Weather（HTTP はモック）が trap せずに動くこと
+# CI 用: ランチャー（電池表示つき） → Paint → ホーム → Weather（HTTP はモック）が trap せずに動くこと
+# 電池（2 セル 7.9V、750mA で充電中）をランチャーの右上に出す。ランチャーは 5 秒ごとに読み直す
+battery 7900 750
+wait 5200
 shot /tmp/wasmos-1-launcher.png
 tap 250 270
 wait 50

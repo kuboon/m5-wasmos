@@ -6,7 +6,7 @@
 /// モデルはイベント駆動: ホストが `init` を一度呼び、以後は `on-event` を呼ぶ。
 /// アプリはコールバックの中でブロックしない（wasi:http も非ブロッキングに使う）。
 /// こうするとホスト（実機 / ブラウザシミュレータ）がループと中断を握れる。
-package wasmos:os@0.1.0;
+package wasmos:os@0.2.0;
 
 interface types {
   /// 0xAARRGGBB
@@ -89,6 +89,15 @@ interface system {
     color: u32,
   }
 
+  record battery-status {
+    /// 電池の端子電圧（mV）
+    voltage-mv: u32,
+    /// 電池に流れ込む電流（mA）。+ が充電、- が放電
+    current-ma: s32,
+    /// 直列セル数（Tab5 は 2）。残量の目安はセルあたりの電圧から SDK が出す
+    cells: u8,
+  }
+
   log: func(message: string);
   /// monotonic ms
   now-ms: func() -> u64;
@@ -100,6 +109,9 @@ interface system {
   /// ms 後に `event.timer(id)` を 1 回送る
   set-timer: func(ms: u32) -> u32;
   cancel-timer: func(id: u32);
+
+  /// 電池の状態（電池が無い・読めない・シミュレータなら none）
+  battery: func() -> option<battery-status>;
 
   /// インストール済みアプリ
   installed: func() -> list<app-info>;

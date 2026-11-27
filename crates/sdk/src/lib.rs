@@ -31,6 +31,7 @@ pub mod bindings {
 pub mod color;
 pub mod gfx;
 pub mod http;
+pub mod power;
 pub mod ui;
 
 use std::cell::RefCell;

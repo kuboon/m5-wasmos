@@ -10,13 +10,14 @@
 //!   home                   システムジェスチャ
 //!   wait <ms>              tick を回す
 //!   mock <url-prefix> <file>   HTTP 応答を差し替え（その URL で始まるリクエストに file の中身を 200 で返す）
+//!   battery <mV> <mA>      電池の状態を差し替え（2 セル。mA は + が充電）。既定は電池なし
 //!   shot <file.png>        画面を保存
 
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
 use wasmos_host::bindings::wasmos::os::types::{Event, Touch, TouchPhase};
-use wasmos_host::{AppMeta, HttpRequest, HttpResponse, IRect, Platform, Runtime};
+use wasmos_host::{AppMeta, Battery, HttpRequest, HttpResponse, IRect, Platform, Runtime};
 
 static FONT: &[u8] = include_bytes!("../../host/assets/NotoSansJP-Regular-jis.ttf");
 
@@ -26,6 +27,7 @@ struct Sim {
     mocks: Vec<(String, Vec<u8>)>,
     http: HashMap<u32, Result<HttpResponse, String>>,
     next: u32,
+    battery: Option<Battery>,
 }
 
 impl Platform for Sim {
@@ -37,6 +39,9 @@ impl Platform for Sim {
     }
     fn wall_ms(&self) -> Option<u64> {
         None
+    }
+    fn battery(&mut self) -> Option<Battery> {
+        self.battery
     }
     fn http_start(&mut self, req: HttpRequest) -> u32 {
         let h = self.next;
@@ -119,6 +124,7 @@ fn main() -> wasmtime::Result<()> {
         mocks: vec![],
         http: HashMap::new(),
         next: 1,
+        battery: None,
     };
     let engine = wasmos_host::engine::engine_for("pulley64")?;
     let mut rt = Runtime::with_engine(engine, sim, FONT, &launcher)?;
@@ -170,6 +176,13 @@ fn main() -> wasmtime::Result<()> {
             Some("mock") => {
                 let body = std::fs::read(w[2])?;
                 rt.platform().mocks.push((w[1].to_string(), body));
+            }
+            Some("battery") => {
+                rt.platform().battery = Some(Battery {
+                    voltage_mv: n(1) as u32,
+                    current_ma: n(2),
+                    cells: 2,
+                });
             }
             Some("shot") => {
                 let p = rt.platform();
