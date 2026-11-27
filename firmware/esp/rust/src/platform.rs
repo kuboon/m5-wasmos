@@ -12,18 +12,18 @@ pub const ROTATE_180: bool = false;
 pub const PANEL_W: i32 = 720;
 pub const PANEL_H: i32 = 1280;
 
-/// 論理 (x, y) → 物理 (px, py)
-pub fn to_panel(x: i32, y: i32) -> (i32, i32) {
+/// 物理 (px, py) → 論理 (x, y)。180 度回転は自分自身が逆なので、論理 → 物理にも使える
+pub fn from_panel(px: i32, py: i32) -> (i32, i32) {
     if ROTATE_180 {
-        (PANEL_W - 1 - x, PANEL_H - 1 - y)
+        (PANEL_W - 1 - px, PANEL_H - 1 - py)
     } else {
-        (x, y)
+        (px, py)
     }
 }
 
-/// 物理 (px, py) → 論理 (x, y)（180 度回転は自分自身が逆）
-pub fn from_panel(px: i32, py: i32) -> (i32, i32) {
-    to_panel(px, py)
+fn rgb565(px: &[u8]) -> u16 {
+    let (r, g, b) = (px[0] as u16, px[1] as u16, px[2] as u16);
+    ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3)
 }
 
 pub struct EspPlatform {
@@ -86,24 +86,30 @@ impl Platform for EspPlatform {
     }
 
     fn present(&mut self, rgba: &[u8], width: u32, _height: u32, d: IRect) {
-        // 論理の dirty 矩形を物理の矩形にして RGB565 に詰め替える
-        let (ax, ay) = to_panel(d.x, d.y);
-        let (bx, by) = to_panel(d.x + d.w - 1, d.y + d.h - 1);
-        let (px0, px1) = (ax.min(bx), ax.max(bx) + 1);
-        let (py0, py1) = (ay.min(by), ay.max(by) + 1);
-        let pw = (px1 - px0) as usize;
-        let ph = (py1 - py0) as usize;
-        self.buf.resize(pw * ph, 0);
+        // dirty 矩形を行ごとに RGB565 に詰め替える（論理と物理は同じ向きか 180 度）
+        let (w, h) = (d.w as usize, d.h as usize);
+        self.buf.resize(w * h, 0);
         let stride = width as usize * 4;
-        for py in py0..py1 {
-            let row = (py - py0) as usize * pw;
-            for px in px0..px1 {
-                let (x, y) = from_panel(px, py);
-                let i = y as usize * stride + x as usize * 4;
-                let (r, g, b) = (rgba[i] as u16, rgba[i + 1] as u16, rgba[i + 2] as u16);
-                self.buf[row + (px - px0) as usize] = ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
+        for row in 0..h {
+            let start = (d.y as usize + row) * stride + d.x as usize * 4;
+            let src = rgba[start..start + w * 4].chunks_exact(4);
+            if ROTATE_180 {
+                let dst = &mut self.buf[(h - 1 - row) * w..][..w];
+                for (o, px) in dst.iter_mut().rev().zip(src) {
+                    *o = rgb565(px);
+                }
+            } else {
+                let dst = &mut self.buf[row * w..][..w];
+                for (o, px) in dst.iter_mut().zip(src) {
+                    *o = rgb565(px);
+                }
             }
         }
-        hw::draw(px0, py0, px1, py1, &self.buf);
+        let (px0, py0) = if ROTATE_180 {
+            (PANEL_W - d.x - d.w, PANEL_H - d.y - d.h)
+        } else {
+            (d.x, d.y)
+        };
+        hw::draw(px0, py0, px0 + d.w, py0 + d.h, &self.buf);
     }
 }
