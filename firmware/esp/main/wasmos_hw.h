@@ -6,7 +6,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-// 物理パネルは縦長 720x1280（RGB565）。論理画面 1280x720 への回転は Rust 側
+// 物理パネルは縦長 720x1280（RGB565）。論理画面も同じ向き（180 度回転の切り替えは Rust 側）
 #define WASMOS_PANEL_W 720
 #define WASMOS_PANEL_H 1280
 

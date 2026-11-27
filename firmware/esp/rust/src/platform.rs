@@ -6,7 +6,7 @@ use wasmos_host::{Battery, HttpRequest, HttpResponse, IRect, Platform};
 
 use crate::hw;
 
-/// 論理画面（横 1280x720）→ 物理パネル（縦 720x1280）の回転。
+/// 論理画面（縦 720x1280）と物理パネル（縦 720x1280）は同じ向き。
 /// 上下逆に映ったら true にする（タッチも一緒に反転する）
 pub const ROTATE_180: bool = false;
 pub const PANEL_W: i32 = 720;
@@ -15,19 +15,15 @@ pub const PANEL_H: i32 = 1280;
 /// 論理 (x, y) → 物理 (px, py)
 pub fn to_panel(x: i32, y: i32) -> (i32, i32) {
     if ROTATE_180 {
-        (y, PANEL_H - 1 - x)
+        (PANEL_W - 1 - x, PANEL_H - 1 - y)
     } else {
-        (PANEL_W - 1 - y, x)
+        (x, y)
     }
 }
 
-/// 物理 (px, py) → 論理 (x, y)
+/// 物理 (px, py) → 論理 (x, y)（180 度回転は自分自身が逆）
 pub fn from_panel(px: i32, py: i32) -> (i32, i32) {
-    if ROTATE_180 {
-        (PANEL_H - 1 - py, px)
-    } else {
-        (py, PANEL_W - 1 - px)
-    }
+    to_panel(px, py)
 }
 
 pub struct EspPlatform {

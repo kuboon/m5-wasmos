@@ -6,7 +6,7 @@
 //! struct Hello;
 //! impl App for Hello {
 //!     fn new(_args: &str) -> Self {
-//!         Frame::new().clear(0xff000000).text(640, 340, 48, 0xffffffff, "Hello").submit();
+//!         Frame::new().clear(0xff000000).text(360, 600, 48, 0xffffffff, "Hello").submit();
 //!         Hello
 //!     }
 //!     fn on_event(&mut self, _event: Event) {}

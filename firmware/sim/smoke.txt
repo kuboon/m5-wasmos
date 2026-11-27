@@ -5,7 +5,7 @@ wait 5200
 shot /tmp/wasmos-1-launcher.png
 tap 250 270
 wait 50
-drag 200 300 900 500
+drag 200 500 600 900
 shot /tmp/wasmos-2-paint.png
 home
 wait 50
