@@ -1,13 +1,15 @@
 //! ランチャー。インストール済みアプリをタイルで並べ、タップで起動する。
 //! 右上に電池の残量と充電・放電の電力を出す（電池が読めないときは出さない）。
+//! 下の「アプリを更新」でホームにアプリの更新を頼む。
 
 use wasmos_sdk::color::{self, with_alpha};
 use wasmos_sdk::gfx::{measure_text, rect, Frame, TextAlign};
 use wasmos_sdk::power::{self, Battery, Flow};
-use wasmos_sdk::ui::Scroll;
+use wasmos_sdk::ui::{Button, Scroll};
 use wasmos_sdk::{screen_size, system, App, AppInfo, Event, Rect, TouchPhase};
 
 const HEADER: i32 = 120;
+const FOOTER: i32 = 120;
 const TILE: i32 = 220;
 const GAP: i32 = 40;
 /// 電池を読み直す間隔
@@ -21,6 +23,7 @@ struct Launcher {
     pressed: Option<usize>,
     battery: Option<Battery>,
     battery_timer: u32,
+    update: Button,
 }
 
 impl Launcher {
@@ -42,7 +45,7 @@ impl Launcher {
     }
 
     fn hit(&self, x: i32, y: i32) -> Option<usize> {
-        if y < HEADER {
+        if y < HEADER || y >= self.height - FOOTER {
             return None;
         }
         (0..self.apps.len()).find(|&i| self.tile_rect(i).contains(x, y))
@@ -53,7 +56,7 @@ impl Launcher {
             0,
             HEADER,
             self.width,
-            self.height - HEADER,
+            self.height - HEADER - FOOTER,
         ));
 
         for (i, app) in self.apps.iter().enumerate() {
@@ -83,7 +86,7 @@ impl Launcher {
                 32,
                 color::MUTED,
                 TextAlign::Center,
-                "アプリがありません。本体の更新ボタンで取得してください",
+                "アプリがありません。下の「アプリを更新」で取得してください",
             );
         }
 
@@ -102,6 +105,12 @@ impl Launcher {
                 Some(b) => battery_status(f, self.width - 48, b),
                 None => f,
             })
+            .fill_rect(
+                rect(0, self.height - FOOTER, self.width, FOOTER),
+                color::SURFACE,
+                0,
+            )
+            .with(|f| self.update.draw(f))
             .submit();
     }
 }
@@ -156,9 +165,13 @@ impl App for Launcher {
             pressed: None,
             battery: power::battery(),
             battery_timer: system::set_timer(BATTERY_MS),
+            update: Button::new(
+                rect((w as i32 - 360) / 2, h as i32 - FOOTER + 24, 360, 72),
+                "アプリを更新",
+            ),
         };
         let rows = (app.apps.len() as i32 + app.columns() - 1) / app.columns();
-        app.scroll.max = HEADER + GAP + rows * (TILE + 56 + GAP) - app.height;
+        app.scroll.max = HEADER + GAP + rows * (TILE + 56 + GAP) + FOOTER - app.height;
         app.draw();
         app
     }
@@ -178,6 +191,11 @@ impl App for Launcher {
             }
             _ => return,
         };
+        if self.update.handle(&touches) {
+            // このコールバックが返るとホームが更新画面に切り替える
+            system::update();
+            return;
+        }
         self.scroll.handle(&touches);
 
         for t in &touches {

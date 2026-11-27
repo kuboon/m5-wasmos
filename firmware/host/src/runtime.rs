@@ -44,6 +44,8 @@ pub struct State<P: Platform> {
     /// (http ハンドル, io を通知済みか)
     pub(crate) pending_http: Vec<(u32, bool)>,
     pub(crate) switch: Option<(String, String)>,
+    /// アプリが `system.update` を呼んだ
+    pub(crate) update_requested: bool,
     pub(crate) apps: Vec<AppMeta>,
     pub(crate) launcher: String,
     pub(crate) current: String,
@@ -100,6 +102,7 @@ impl<P: Platform> Runtime<P> {
             frame_requested: false,
             pending_http: Vec::new(),
             switch: None,
+            update_requested: false,
             apps: Vec::new(),
             launcher: launcher.to_string(),
             current: String::new(),
@@ -165,6 +168,11 @@ impl<P: Platform> Runtime<P> {
     /// 次に起動すべきアプリ（launch / exit / trap の結果）
     pub fn take_switch(&mut self) -> Option<(String, String)> {
         self.state_mut().switch.take()
+    }
+
+    /// アプリが更新を求めたか（読むと消える）。更新はプラットフォームの仕事
+    pub fn take_update_request(&mut self) -> bool {
+        core::mem::take(&mut self.state_mut().update_requested)
     }
 
     /// ランチャーへ戻す（システムジェスチャ）

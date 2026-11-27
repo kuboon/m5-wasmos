@@ -20,7 +20,7 @@ const outDir = join(root, "web/build/apps");
 const target = "wasm32-unknown-unknown";
 
 /** WIT の package。manifest に書き、ホストが互換性を判定する */
-const ABI = "wasmos:os@0.3.0";
+const ABI = "wasmos:os@0.4.0";
 
 interface WasmosMeta {
   name: string;

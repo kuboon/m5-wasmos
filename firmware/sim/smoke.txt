@@ -22,3 +22,8 @@ mock https://api.open-meteo.com firmware/sim/weather.json
 tap 510 270
 wait 100
 shot /tmp/wasmos-3-weather.png
+# ランチャーの「アプリを更新」（下中央）で更新を頼めること（ログに update requested）
+home
+wait 50
+tap 360 1220
+wait 50

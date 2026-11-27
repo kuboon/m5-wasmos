@@ -343,6 +343,11 @@ export class Host {
         this.#switch(id, args);
       },
       exit: () => this.#switch(this.manifest.launcher, ""),
+      // シミュレータでは manifest を読み直してランチャーから起動し直す
+      update: () => {
+        log("update");
+        setTimeout(() => this.boot().catch((e) => log(`update: ${e}`)), 0);
+      },
     };
 
     // localStorage にアプリごとに置く（キーの検査と上限は実機の host と同じ）
@@ -380,7 +385,7 @@ export class Host {
     };
     // jco はバージョン付き / 無しのどちらの名前でも引くことがあるので両方置く
     for (const [k, v] of Object.entries({ ...all })) {
-      all[`${k}@${k.startsWith("wasmos:") ? "0.3.0" : "0.2.3"}`] = v;
+      all[`${k}@${k.startsWith("wasmos:") ? "0.4.0" : "0.2.3"}`] = v;
     }
     return all;
   }

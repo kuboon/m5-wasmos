@@ -6,7 +6,7 @@
 /// モデルはイベント駆動: ホストが `init` を一度呼び、以後は `on-event` を呼ぶ。
 /// アプリはコールバックの中でブロックしない（wasi:http も非ブロッキングに使う）。
 /// こうするとホスト（実機 / ブラウザシミュレータ）がループと中断を握れる。
-package wasmos:os@0.3.0;
+package wasmos:os@0.4.0;
 
 interface types {
   /// 0xAARRGGBB
@@ -119,6 +119,9 @@ interface system {
   launch: func(id: string, args: string);
   /// 終了してランチャーに戻る
   exit: func();
+  /// 現在のコールバックが返った後、アプリの更新を確認する（ホームが更新画面を出し、
+  /// 終わるとランチャーを起動し直す。今のアプリは終わる）
+  update: func();
 }
 
 /// アプリごとの小さな保存領域。電源を切っても残る（ホームへ戻ってもアプリは

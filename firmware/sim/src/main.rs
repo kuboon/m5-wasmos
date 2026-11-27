@@ -219,6 +219,12 @@ fn main() -> wasmtime::Result<()> {
             }
             Some(other) => panic!("unknown command {other}"),
         }
+        // 実機は更新画面を出して取りに行く。ここでは記録してランチャーから起動し直すだけ
+        if rt.take_update_request() {
+            println!("update requested");
+            let launcher = rt.launcher().to_string();
+            rt.start(&launcher, &load(dir, &launcher), "")?;
+        }
         run_switches(&mut rt, dir);
     }
     Ok(())
