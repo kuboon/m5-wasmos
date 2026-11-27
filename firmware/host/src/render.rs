@@ -16,8 +16,9 @@ use crate::bindings::wasmos::os::gfx::{Cmd, TextAlign};
 use crate::bindings::wasmos::os::types::Rect;
 use crate::platform::IRect;
 
-pub const WIDTH: u32 = 1280;
-pub const HEIGHT: u32 = 720;
+/// 論理画面（縦置き。Tab5 のパネル本来の向き）
+pub const WIDTH: u32 = 720;
+pub const HEIGHT: u32 = 1280;
 
 struct Glyph {
     /// グリフ原点（ペン位置, ベースライン）からの左上

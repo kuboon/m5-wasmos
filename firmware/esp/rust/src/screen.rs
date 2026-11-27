@@ -20,8 +20,8 @@ pub fn message(rt: &mut Runtime<EspPlatform>, title: &str, detail: &str) {
     let net_color = if online { 0xff22_c55e } else { 0xff9c_a3af };
     rt.system_frame(&[
         Cmd::Clear(0xff11_1827),
-        text(640, 250, 56, 0xffe5_e7eb, title),
-        text(640, 340, 28, 0xff9c_a3af, detail),
-        text(640, 640, 22, net_color, &net),
+        text(360, 520, 52, 0xffe5_e7eb, title),
+        text(360, 610, 22, 0xff9c_a3af, detail),
+        text(360, 1200, 22, net_color, &net),
     ]);
 }

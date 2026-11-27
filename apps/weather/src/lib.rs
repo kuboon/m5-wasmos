@@ -135,7 +135,7 @@ impl Weather {
         let (w, h) = (self.width, self.height);
         let mut f = Frame::new()
             .clear(BG)
-            .text(48, 40, 48, color::WHITE, PLACE)
+            .text(32, 40, 44, color::WHITE, PLACE)
             .with(|f| self.back.draw(f))
             .with(|f| self.reload.draw(f));
 
@@ -161,29 +161,30 @@ impl Weather {
                     e.clone(),
                 ),
             Status::Ready { current, history } => {
-                let f = draw_current(f, current);
-                draw_chart(f, rect(400, 150, w - 448, h - 230), history)
+                // 縦置き: 上に今の天気、下に気温のグラフ
+                let f = draw_current(f, current, w, h);
+                draw_chart(f, rect(24, 440, w - 48, h - 560), history)
             }
         };
         f.submit();
     }
 }
 
-fn draw_current(f: Frame, c: &Current) -> Frame {
-    let cx = 200;
+fn draw_current(f: Frame, c: &Current, w: i32, h: i32) -> Frame {
+    let cx = w / 2;
     let time = c.time.replace('T', " ");
     f.text_aligned(
         cx,
-        190,
+        140,
         120,
         color::WHITE,
         TextAlign::Center,
         format!("{:.1}°", c.temp),
     )
-    .text_aligned(cx, 340, 40, color::FG, TextAlign::Center, describe(c.code))
+    .text_aligned(cx, 290, 40, color::FG, TextAlign::Center, describe(c.code))
     .text_aligned(
         cx,
-        400,
+        350,
         26,
         color::FG,
         TextAlign::Center,
@@ -191,7 +192,7 @@ fn draw_current(f: Frame, c: &Current) -> Frame {
     )
     .text_aligned(
         cx,
-        640,
+        h - 80,
         20,
         color::MUTED,
         TextAlign::Center,
@@ -329,8 +330,8 @@ impl App for Weather {
             height: h,
             status: Status::Loading,
             pending: None,
-            back: Button::new(rect(w - 224, 28, 176, 64), "← Home"),
-            reload: Button::new(rect(w - 424, 28, 176, 64), "更新"),
+            back: Button::new(rect(w - 200, 28, 168, 64), "← Home"),
+            reload: Button::new(rect(w - 384, 28, 168, 64), "更新"),
         };
         app.fetch();
         app.draw();

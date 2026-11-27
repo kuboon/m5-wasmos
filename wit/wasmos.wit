@@ -63,7 +63,7 @@ interface gfx {
     pop-clip,
   }
 
-  /// 論理画面サイズ（Tab5 は 1280x720 横）
+  /// 論理画面サイズ（Tab5 は 720x1280 縦）
   screen-size: func() -> tuple<u32, u32>;
   /// テキストの描画幅（px）
   measure-text: func(text: string, size: u16) -> u32;

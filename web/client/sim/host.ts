@@ -9,8 +9,8 @@
 
 import { createWasiHttp } from "./wasi_http.ts";
 
-export const SCREEN_W = 1280;
-export const SCREEN_H = 720;
+export const SCREEN_W = 720;
+export const SCREEN_H = 1280;
 /** システムジェスチャの開始帯（px）と、戻るのに必要な下方向の移動量 */
 const GESTURE_EDGE = 24;
 const GESTURE_DISTANCE = 160;

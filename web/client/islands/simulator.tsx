@@ -70,8 +70,8 @@ export const Simulator = clientEntry(
               on("contextmenu", (e) => e.preventDefault()),
               ref((node) => (canvas = node as HTMLCanvasElement)),
             ]}
-            width={1280}
-            height={720}
+            width={720}
+            height={1280}
           />
         </div>
         <div mix={barStyle}>
@@ -102,7 +102,9 @@ export const Simulator = clientEntry(
 
 const wrapStyle = css({ display: "grid", gap: "0.75rem" });
 
+// 縦置き。画面の高さに収まる幅にする
 const deviceStyle = css({
+  justifySelf: "center",
   padding: "18px",
   borderRadius: "28px",
   background: "#2b2f36",
@@ -111,8 +113,8 @@ const deviceStyle = css({
 
 const canvasStyle = css({
   display: "block",
-  width: "100%",
-  aspectRatio: "16 / 9",
+  width: "min(calc(100vw - 4rem), calc(80vh * 9 / 16))",
+  aspectRatio: "9 / 16",
   borderRadius: "6px",
   background: "#000",
   userSelect: "none",

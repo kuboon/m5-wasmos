@@ -187,7 +187,11 @@ fn main() -> wasmtime::Result<()> {
             Some("shot") => {
                 let p = rt.platform();
                 let file = std::fs::File::create(w[1])?;
-                let mut enc = png::Encoder::new(std::io::BufWriter::new(file), 1280, 720);
+                let mut enc = png::Encoder::new(
+                    std::io::BufWriter::new(file),
+                    wasmos_host::render::WIDTH,
+                    wasmos_host::render::HEIGHT,
+                );
                 enc.set_color(png::ColorType::Rgba);
                 enc.write_header()?.write_image_data(&p.screen)?;
                 println!("shot {}", w[1]);
