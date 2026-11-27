@@ -33,6 +33,7 @@ extern "C" {
     fn wasmos_hw_file_write(name: *const c_char, buf: *const u8, len: usize) -> c_int;
     fn wasmos_hw_net_status(buf: *mut u8, cap: usize) -> c_int;
     fn wasmos_hw_battery(mv: *mut c_int, ma: *mut c_int) -> c_int;
+    fn wasmos_hw_backlight(on: bool);
     fn wasmos_hw_take_update_request() -> bool;
 }
 
@@ -150,6 +151,11 @@ pub fn net_status() -> (bool, String) {
     let ok = unsafe { wasmos_hw_net_status(buf.as_mut_ptr(), buf.len()) } != 0;
     let end = buf.iter().position(|b| *b == 0).unwrap_or(buf.len());
     (ok, String::from_utf8_lossy(&buf[..end]).into())
+}
+
+/// バックライト（false で消す）
+pub fn backlight(on: bool) {
+    unsafe { wasmos_hw_backlight(on) }
 }
 
 /// (電池電圧 mV, 電流 mA（+ が充電）)。読めなければ None

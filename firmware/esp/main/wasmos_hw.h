@@ -20,6 +20,8 @@ void wasmos_hw_free(void *p);
 
 // 物理座標 [x0,x1) x [y0,y1) に RGB565 を描く
 void wasmos_hw_draw(int x0, int y0, int x1, int y1, const uint16_t *pixels);
+// バックライト（false で消す。画面の中身とタッチはそのまま）
+void wasmos_hw_backlight(bool on);
 // 物理座標のタッチ点（最大 max 個）。戻り値は点の数
 int wasmos_hw_touch(uint16_t *xs, uint16_t *ys, int max);
 
