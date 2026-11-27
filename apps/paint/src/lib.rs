@@ -52,9 +52,9 @@ impl Stroke {
     }
 }
 
-/// [版][色 u8, 点の数 u16, (x u16, y u16)...]...（数値はリトルエンディアン）
-fn encode(strokes: &[Stroke]) -> Vec<u8> {
-    let mut out = vec![FORMAT];
+/// [版][選んでいる色][色 u8, 点の数 u16, (x u16, y u16)...]...（数値はリトルエンディアン）
+fn encode(selected: u8, strokes: &[Stroke]) -> Vec<u8> {
+    let mut out = vec![FORMAT, selected];
     for s in strokes {
         for chunk in s.points.chunks(u16::MAX as usize) {
             out.push(s.color);
@@ -68,11 +68,14 @@ fn encode(strokes: &[Stroke]) -> Vec<u8> {
     out
 }
 
-fn decode(data: &[u8]) -> Vec<Stroke> {
+/// (選んでいる色, 線)
+fn decode(data: &[u8]) -> (u8, Vec<Stroke>) {
     let mut strokes = Vec::new();
-    let Some((&FORMAT, mut rest)) = data.split_first() else {
-        return strokes;
+    let [FORMAT, selected, rest @ ..] = data else {
+        return (0, strokes);
     };
+    let selected = *selected % PALETTE.len() as u8;
+    let mut rest = rest;
     while rest.len() >= 3 {
         let color = rest[0];
         let n = u16::from_le_bytes([rest[1], rest[2]]) as usize;
@@ -94,7 +97,7 @@ fn decode(data: &[u8]) -> Vec<Stroke> {
         strokes.push(Stroke { color, points });
         rest = &rest[n * 4..];
     }
-    strokes
+    (selected, strokes)
 }
 
 struct Paint {
@@ -161,10 +164,10 @@ impl Paint {
     }
 
     fn save(&self) {
-        let data = if self.strokes.is_empty() {
+        let data = if self.strokes.is_empty() && self.color == 0 {
             Vec::new()
         } else {
-            encode(&self.strokes)
+            encode(self.color, &self.strokes)
         };
         if let Err(e) = storage::set(KEY, &data) {
             log(format!("save: {e}"));
@@ -186,11 +189,12 @@ impl App for Paint {
     fn new(_args: &str) -> Self {
         let (w, h) = screen_size();
         let (w, h) = (w as i32, h as i32);
+        let (color, strokes) = storage::get(KEY).map(|d| decode(&d)).unwrap_or_default();
         let app = Paint {
             width: w,
             height: h,
-            color: 0,
-            strokes: storage::get(KEY).map(|d| decode(&d)).unwrap_or_default(),
+            color,
+            strokes,
             active: HashMap::new(),
             clear: Button::new(rect(w - 380, 14, 160, 60), "Clear"),
             back: Button::new(rect(w - 200, 14, 176, 60), "← Home"),
@@ -266,7 +270,7 @@ impl App for Paint {
             f = f.with(|f| self.palette(f));
         }
         f.submit();
-        if finished {
+        if finished || picked {
             self.save();
         }
     }
