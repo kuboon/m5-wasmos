@@ -97,6 +97,10 @@ impl<P: Platform> system::Host for State<P> {
         self.switch = Some((self.launcher.clone(), String::new()));
         Ok(())
     }
+    fn update(&mut self) -> Result<()> {
+        self.update_requested = true;
+        Ok(())
+    }
 }
 
 // --- storage -----------------------------------------------------------------

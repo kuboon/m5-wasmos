@@ -193,7 +193,9 @@ pub extern "C" fn wasmos_main() {
             hw::log(&alloc::format!("net: {status}"));
             last_status = status;
         }
-        if hw::take_update_request() || (online && !auto_update_done) {
+        // シリアルの update コマンド、アプリ（ランチャーの更新ボタン）、起動後の自動確認
+        let asked = hw::take_update_request() | rt.take_update_request();
+        if asked || (online && !auto_update_done) {
             auto_update_done = true;
             if online {
                 run_update(&mut rt);
