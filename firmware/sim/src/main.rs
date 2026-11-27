@@ -28,6 +28,8 @@ struct Sim {
     http: HashMap<u32, Result<HttpResponse, String>>,
     next: u32,
     battery: Option<Battery>,
+    /// storage（(アプリ, キー) → 値）。プロセスの間だけ
+    storage: HashMap<(String, String), Vec<u8>>,
     /// present で送った画素数の累計（実機ではパネルへの転送量に当たる）
     presented: u64,
 }
@@ -44,6 +46,13 @@ impl Platform for Sim {
     }
     fn battery(&mut self) -> Option<Battery> {
         self.battery
+    }
+    fn storage_get(&mut self, app: &str, key: &str) -> Option<Vec<u8>> {
+        self.storage.get(&(app.into(), key.into())).cloned()
+    }
+    fn storage_set(&mut self, app: &str, key: &str, value: Vec<u8>) -> Result<(), String> {
+        self.storage.insert((app.into(), key.into()), value);
+        Ok(())
     }
     fn http_start(&mut self, req: HttpRequest) -> u32 {
         let h = self.next;
@@ -129,6 +138,7 @@ fn main() -> wasmtime::Result<()> {
         next: 1,
         battery: None,
         presented: 0,
+        storage: HashMap::new(),
     };
     let engine = wasmos_host::engine::engine_for("pulley64")?;
     let mut rt = Runtime::with_engine(engine, sim, FONT, &launcher)?;

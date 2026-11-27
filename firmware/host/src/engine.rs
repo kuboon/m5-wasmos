@@ -6,7 +6,7 @@ use wasmtime::{Config, Engine, Result};
 /// manifest に書くエンジン識別子。wasmtime の版か下の設定を変えたら上げる。
 /// WIT（wit/wasmos.wit）を変えたときも上げる: 古い本体が、自分に無い import を使う
 /// 新しいアプリを取ってきて起動できなくなるのを防ぐ（本体は一致しない manifest を読まない）
-pub const ENGINE_ID: &str = "wasmtime-51.0.0/pulley32/fuel/1/wasmos-0.2";
+pub const ENGINE_ID: &str = "wasmtime-51.0.0/pulley32/fuel/1/wasmos-0.3";
 
 /// 実機（ESP32-P4, 32bit）のターゲット
 pub const TARGET: &str = "pulley32";

@@ -108,6 +108,7 @@ fn start(rt: &mut Runtime<EspPlatform>, id: &str, args: &str) {
 
 fn run_update(rt: &mut Runtime<EspPlatform>) {
     rt.stop();
+    rt.platform().flush_storage();
     let result = update::run(rt);
     let (title, detail) = match &result {
         Ok(n) => ("更新しました", alloc::format!("{n} 個のアプリを取得")),
@@ -141,9 +142,17 @@ pub extern "C" fn wasmos_main() {
     let mut input = input::Tracker::new();
     let mut points = Vec::new();
     let mut last_status = String::new();
+    let mut last_touch = 0u64;
 
     loop {
         hw::touch(&mut points);
+        let now = hw::now_ms();
+        if !points.is_empty() {
+            last_touch = now;
+        } else if now - last_touch > 1000 {
+            // storage はタッチが 1 秒止んでからフラッシュに書く（描画を止めないように）
+            rt.platform().flush_storage();
+        }
         let (events, home) = input.update(&points);
         if home {
             rt.go_home();
