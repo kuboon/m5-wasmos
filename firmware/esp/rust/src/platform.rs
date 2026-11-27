@@ -21,7 +21,7 @@ pub fn from_panel(px: i32, py: i32) -> (i32, i32) {
     }
 }
 
-fn rgb565(px: &[u8]) -> u16 {
+fn rgb565(px: &[u8; 4]) -> u16 {
     let (r, g, b) = (px[0] as u16, px[1] as u16, px[2] as u16);
     ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3)
 }
@@ -92,7 +92,7 @@ impl Platform for EspPlatform {
         let stride = width as usize * 4;
         for row in 0..h {
             let start = (d.y as usize + row) * stride + d.x as usize * 4;
-            let src = rgba[start..start + w * 4].chunks_exact(4);
+            let src = rgba[start..start + w * 4].as_chunks::<4>().0.iter();
             if ROTATE_180 {
                 let dst = &mut self.buf[(h - 1 - row) * w..][..w];
                 for (o, px) in dst.iter_mut().rev().zip(src) {

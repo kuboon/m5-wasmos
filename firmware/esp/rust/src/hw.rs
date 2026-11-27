@@ -158,7 +158,7 @@ pub fn battery() -> Option<(u32, i32)> {
     if unsafe { wasmos_hw_battery(&mut mv, &mut ma) } == 0 {
         return None;
     }
-    Some((mv.max(0) as u32, ma as i32))
+    Some((mv.max(0) as u32, ma))
 }
 
 pub fn take_update_request() -> bool {
