@@ -73,6 +73,15 @@ pub trait Platform: 'static {
         None
     }
 
+    /// アプリごとの保存領域（キーはホストが検査済み）。無ければ None
+    fn storage_get(&mut self, _app: &str, _key: &str) -> Option<Vec<u8>> {
+        None
+    }
+    /// 保存する。空の値は削除の意味
+    fn storage_set(&mut self, _app: &str, _key: &str, _value: Vec<u8>) -> Result<(), String> {
+        Err("storage is not available".into())
+    }
+
     /// HTTP を非同期に開始してハンドルを返す。TLS はプラットフォームが担当
     fn http_start(&mut self, req: HttpRequest) -> u32;
     /// 完了（成功・失敗とも）していれば true

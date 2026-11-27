@@ -345,15 +345,42 @@ export class Host {
       exit: () => this.#switch(this.manifest.launcher, ""),
     };
 
+    // localStorage にアプリごとに置く（キーの検査と上限は実機の host と同じ）
+    const storageKey = (key: string) => {
+      if (!/^[a-z0-9_-]{1,16}$/.test(key)) return null;
+      return `wasmos:${s.app.id}:${key}`;
+    };
+    const storage = {
+      get: (key: string) => {
+        const k = storageKey(key);
+        const v = k ? localStorage.getItem(k) : null;
+        return v ? Uint8Array.fromBase64(v) : undefined;
+      },
+      set: (key: string, value: Uint8Array) => {
+        const k = storageKey(key);
+        if (!k) throw { payload: `invalid key: ${key}` };
+        if (value.length > 256 * 1024) {
+          throw { payload: `too large: ${value.length} bytes` };
+        }
+        try {
+          if (value.length === 0) localStorage.removeItem(k);
+          else localStorage.setItem(k, value.toBase64());
+        } catch (e) {
+          throw { payload: String(e) };
+        }
+      },
+    };
+
     const all: Record<string, unknown> = {
       ...s.http.imports,
       "wasmos:os/types": {},
       "wasmos:os/gfx": gfx,
       "wasmos:os/system": system,
+      "wasmos:os/storage": storage,
     };
     // jco はバージョン付き / 無しのどちらの名前でも引くことがあるので両方置く
     for (const [k, v] of Object.entries({ ...all })) {
-      all[`${k}@${k.startsWith("wasmos:") ? "0.2.0" : "0.2.3"}`] = v;
+      all[`${k}@${k.startsWith("wasmos:") ? "0.3.0" : "0.2.3"}`] = v;
     }
     return all;
   }

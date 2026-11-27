@@ -9,7 +9,7 @@ use wasmtime::{format_err, Result};
 use crate::bindings::wasi::clocks::monotonic_clock;
 use crate::bindings::wasi::http::{outgoing_handler, types as ht};
 use crate::bindings::wasi::io::{error as ioe, poll, streams};
-use crate::bindings::wasmos::os::{gfx, system, types as ost};
+use crate::bindings::wasmos::os::{gfx, storage, system, types as ost};
 use crate::http::*;
 use crate::platform::{HttpRequest, Platform};
 use crate::render::{HEIGHT, WIDTH};
@@ -96,6 +96,39 @@ impl<P: Platform> system::Host for State<P> {
     fn exit(&mut self) -> Result<()> {
         self.switch = Some((self.launcher.clone(), String::new()));
         Ok(())
+    }
+}
+
+// --- storage -----------------------------------------------------------------
+
+/// 保存する値の上限
+const STORAGE_MAX: usize = 256 * 1024;
+
+/// キーは英小文字・数字・`_`・`-` で 1〜16 文字（ファイル名に使うため）
+fn valid_key(key: &str) -> bool {
+    (1..=16).contains(&key.len())
+        && key
+            .bytes()
+            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'_' || b == b'-')
+}
+
+impl<P: Platform> storage::Host for State<P> {
+    fn get(&mut self, key: String) -> Result<Option<Vec<u8>>> {
+        if !valid_key(&key) {
+            return Ok(None);
+        }
+        let app = self.current.clone();
+        Ok(self.p.storage_get(&app, &key).filter(|v| !v.is_empty()))
+    }
+    fn set(&mut self, key: String, value: Vec<u8>) -> Result<core::result::Result<(), String>> {
+        if !valid_key(&key) {
+            return Ok(Err(alloc::format!("invalid key: {key}")));
+        }
+        if value.len() > STORAGE_MAX {
+            return Ok(Err(alloc::format!("too large: {} bytes", value.len())));
+        }
+        let app = self.current.clone();
+        Ok(self.p.storage_set(&app, &key, value))
     }
 }
 

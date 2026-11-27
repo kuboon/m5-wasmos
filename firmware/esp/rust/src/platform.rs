@@ -1,4 +1,5 @@
 //! [`Platform`] の実機実装
+use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::vec::Vec;
 
@@ -28,12 +29,33 @@ fn rgb565(px: &[u8; 4]) -> u16 {
 
 pub struct EspPlatform {
     buf: Vec<u16>,
+    /// まだフラッシュに書いていない storage の値（ファイル名 → 値）
+    pending: BTreeMap<String, Vec<u8>>,
 }
 
 impl EspPlatform {
     pub fn new() -> Self {
-        Self { buf: Vec::new() }
+        Self {
+            buf: Vec::new(),
+            pending: BTreeMap::new(),
+        }
     }
+
+    /// storage の値を SPIFFS に書く。書き込みは遅い（数十〜数百 ms）ので、
+    /// メインループがタッチの止んだときに呼ぶ
+    pub fn flush_storage(&mut self) {
+        for (name, value) in core::mem::take(&mut self.pending) {
+            if !hw::file_write(&name, &value) {
+                hw::log(&alloc::format!("storage: write {name} failed"));
+            }
+        }
+    }
+}
+
+/// storage のファイル名。`<id>.cwasm` や manifest.json と重ならないよう `~` で区切る。
+/// SPIFFS の名前は 32 バイトまで（先頭の / と書き込み中の .t を含む）
+fn storage_file(app: &str, key: &str) -> Option<String> {
+    (app.len() + key.len() <= 27).then(|| alloc::format!("{app}~{key}"))
 }
 
 impl Platform for EspPlatform {
@@ -53,6 +75,20 @@ impl Platform for EspPlatform {
             current_ma,
             cells: 2,
         })
+    }
+
+    fn storage_get(&mut self, app: &str, key: &str) -> Option<Vec<u8>> {
+        let name = storage_file(app, key)?;
+        match self.pending.get(&name) {
+            Some(v) => Some(v.clone()),
+            None => hw::file_read(&name),
+        }
+    }
+    fn storage_set(&mut self, app: &str, key: &str, value: Vec<u8>) -> Result<(), String> {
+        let name = storage_file(app, key).ok_or("app id + key too long")?;
+        // ここではメモリに置くだけ（アプリが終わっても残る）。書くのは flush_storage
+        self.pending.insert(name, value);
+        Ok(())
     }
 
     fn http_start(&mut self, req: HttpRequest) -> u32 {

@@ -1,4 +1,4 @@
-# CI 用: ランチャー（電池表示つき） → Paint → ホーム → Weather（HTTP はモック）が trap せずに動くこと
+# CI 用: ランチャー（電池表示つき） → Paint → ホーム → Paint（保存した絵が残る）→ ホーム → Weather（HTTP はモック）が trap せずに動くこと
 # 電池（2 セル 7.9V、750mA で充電中）をランチャーの右上に出す。ランチャーは 5 秒ごとに読み直す
 battery 7900 750
 wait 5200
@@ -6,7 +6,16 @@ shot /tmp/wasmos-1-launcher.png
 tap 250 270
 wait 50
 drag 200 500 600 900
+# パレットで青（左から 5 つ目）を選んでもう 1 本
+tap 540 1224
+drag 600 400 150 1000
 shot /tmp/wasmos-2-paint.png
+home
+wait 50
+# 開き直しても 2 本とも残っていること（wasmos-2 と同じ絵になる）
+tap 250 270
+wait 50
+shot /tmp/wasmos-2b-paint-restored.png
 home
 wait 50
 mock https://api.open-meteo.com firmware/sim/weather.json
