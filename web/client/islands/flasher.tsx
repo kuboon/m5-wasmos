@@ -1,5 +1,5 @@
 /**
- * ブラウザから Tab5 に書き込み、USB シリアルで設定する（Web Serial: Chrome / Edge）。
+ * ブラウザから Tab5 に書き込み、USB シリアルで設定する（Web Serial: Chrome / Edge / Firefox）。
  *
  * 1. 書き込み: esptool-js で `firmware/m5-wasmos.bin`（merge-bin 済み）を書く。
  *    merge-bin はパーティションの隙間を 0xFF で埋めるので、丸ごと 0x0 に書くと
@@ -67,7 +67,7 @@ export const Flasher = clientEntry(
       const s = serial();
       if (!s) {
         return log(
-          "このブラウザは Web Serial に対応していません（Chrome / Edge を使ってください）",
+          "このブラウザは Web Serial に対応していません（Chrome / Edge / Firefox を使ってください）",
         );
       }
       await closeConsole();

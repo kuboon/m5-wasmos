@@ -17,8 +17,8 @@ export default function FlashPage(handle: Handle<FlashProps>) {
     <>
       <h1>実機に書き込む</h1>
       <p>
-        PC の Chrome / Edge から USB で書き込みます（Web Serial
-        を使います。Safari / Firefox は未対応）。書き込むとアプリは本体が Wi-Fi
+        PC の Chrome / Edge / Firefox から USB で書き込みます（Web Serial
+        を使います。Safari は未対応）。書き込むとアプリは本体が Wi-Fi
         経由でこのサイトから取ってきます。
       </p>
       <Flasher firmwareUrl={firmwarePath} info={handle.props.info} />

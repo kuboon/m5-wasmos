@@ -4,7 +4,8 @@ M5Stack Tab5（ESP32-P4）用の小さな OS。アプリは全部 **wasm コン�
 ランチャーもその 1 つ。ファームウェアを焼き直さずにアプリを差し替えられる。
 
 - サイト / シミュレータ: https://kuboon.github.io/m5-wasmos/
-- 実機への書き込み（Chrome / Edge）: https://kuboon.github.io/m5-wasmos/flash
+- 実機への書き込み（Chrome / Edge / Firefox）:
+  https://kuboon.github.io/m5-wasmos/flash
 - アプリ一覧（実機が読む）:
   https://kuboon.github.io/m5-wasmos/apps/manifest.json
 
